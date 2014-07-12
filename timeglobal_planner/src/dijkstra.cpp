@@ -10,57 +10,46 @@ namespace timeglobal_planner
 		path_pub_ = private_nh.advertise<nav_msgs::Path>("/path", 1);
 
 		#ifdef DISPLAY
-		// test_pub_ = private_nh.advertise<geometry_msgs::PoseStamped>("/test_pose", 1);
-		test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
-		test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
 
-		pt_cloud_.header.frame_id = "map";
-		pt_cloud2_.header.frame_id = "map";
+			test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
+			test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
+
+			pt_cloud_.header.frame_id = "map";
+			pt_cloud2_.header.frame_id = "map";
 
 		#endif
 
-		ROS_DEBUG("registered!");
-		std::fflush(NULL);
-	
+		ROS_DEBUG("Initialized");
 
 		ros::spin();
 	}
 
 	void Dijkstra::timemap_callback(const timemap_server::TimeLapseMap &map){
 		if(map.tmap.size() == 0){
-			ROS_ERROR("map cannot be empty\n");
+			ROS_ERROR("Map cannot be empty\n");
 			return;
 		}
 
-		map_         = map;
+		map_        = map;
 
-		resolution_  = map.tmap[0].map.info.resolution;
+		resolution_ = map.tmap[0].map.info.resolution;
 
-		origin_x_    = map.tmap[0].map.info.origin.position.x;
-		origin_y_    = map.tmap[0].map.info.origin.position.y;
+		origin_x_   = map.tmap[0].map.info.origin.position.x;
+		origin_y_   = map.tmap[0].map.info.origin.position.y;
 
-		size_x_      = map.tmap[0].map.info.width;
-		size_y_      = map.tmap[0].map.info.height;
+		size_x_     = map.tmap[0].map.info.width;
+		size_y_     = map.tmap[0].map.info.height;
 
-		end_time_    = get_endtime(map);
+		end_time_   = get_endtime(map);
 
-		
-		ROS_DEBUG("received %lu maps of size %d X %d and duration %d\n", map.tmap.size(), size_x_, size_y_, end_time_);
-		std::fflush(NULL);
+		ROS_DEBUG("Received %lu maps of size %d X %d and duration %d\n", map.tmap.size(), size_x_, size_y_, end_time_);
 			
-
 		initialized_ = true;
 	}
 
 	void Dijkstra::goal_callback(const geometry_msgs::PoseStamped& goal){
-		// double mx1, my1, mx2, my2;
-		// mapToWorld(2000, 2000, mx1, my1);
-		// mapToWorld(2000, 1925, mx2, my2);
-
-		// ROS_DEBUG("world location: %f X %f, %f X %f", mx1, my1, mx2, my2);
-			
 		if(!initialized_){
-			ROS_WARN("path cannot be found: map not yet initialized");
+			ROS_WARN("Path cannot be found: map not yet initialized");
 			return;
 		}
 		nav_msgs::Path path;
@@ -72,54 +61,34 @@ namespace timeglobal_planner
 		start_pt.t = 0;
 
 		if(!worldToMap(goal.pose.position.x, goal.pose.position.y, goal_pt.x, goal_pt.y)){
-			ROS_WARN("goal point outside of known data, navigation will fail");
+			ROS_WARN("Goal point outside of known data, navigation will fail");
 		}
 		;
 		goal_pt.t  = 1000;
 
-		
-		ROS_DEBUG("received goal at (%f, %f) for time %d\n", goal.pose.position.x, goal.pose.position.y, goal_pt.t);
-		std::fflush(NULL);
+		ROS_DEBUG("Received goal at (%f, %f) for time %d\n", goal.pose.position.x, goal.pose.position.y, goal_pt.t);
 	
-
 		if(plan(map_, path, start_pt, goal_pt)){
 			
-			ROS_DEBUG("before publish (after plan)");
-		std::fflush(NULL);
+			ROS_DEBUG("Before publish (after plan)");
 				
 			publish_path(path);
 		}
 
 		
 		ROS_DEBUG("after publish");
-		std::fflush(NULL);
 		}
 
 
 	bool Dijkstra::plan(const timemap_server::TimeLapseMap &map, nav_msgs::Path &path, Point start_pt, Point goal_pt) {
-		
-		ROS_DEBUG("planning...\n");
-		std::fflush(NULL);
+		ROS_DEBUG("Planning...\n");
 
 		#ifdef DISPLAY
 
-		pt_cloud_.clear();
-		pt_cloud2_.clear();
+			pt_cloud_.clear();
+			pt_cloud2_.clear();
 		
 		#endif
-		time_1 = 0;
-		iter_1 = 0;
-
-		time_2 = 0;
-		iter_2 = 0;
-
-		time_3 = 0;
-		iter_3 = 0;
-
-		time_4 = 0;
-		iter_4 = 0;
-
-		double start_time =ros::Time::now().toSec();
 
 		std::vector<Node> pqueue;
 		std::vector<Node> finished;
@@ -137,24 +106,13 @@ namespace timeglobal_planner
 
 		pqueue.push_back(start);
 
-		double end_lsd = ros::Time::now().toSec();
-		ROS_DEBUG("1: %lf", end_lsd - start_time);
-
 	
 		int i = 0;
 		while(!pqueue.empty()){
-			// start_time =ros::Time::now().toSec();
-			// ROS_DEBUG("len heap: %lu", pqueue.size());
-			// ROS_DEBUG("len finished: %lu", pqueue.size());
-
 			//get the node closest to start
 			cur = pqueue.front();
 			std::pop_heap(pqueue.begin(), pqueue.end(), CompareNodes());
 			pqueue.pop_back();
-
-			// end_lsd = ros::Time::now().toSec();
-			// ROS_DEBUG("2: %lf", end_lsd - start_time);
-			// start_time =ros::Time::now().toSec();
 
 			//we found the shortest path to the goal!
 			if(cur == goal){
@@ -168,28 +126,21 @@ namespace timeglobal_planner
 				ROS_DEBUG("we ran out of time...");
 				return false;
 			}
-	
-			// end_lsd = ros::Time::now().toSec();
-			// ROS_DEBUG("3: %lf", end_lsd - start_time);
-			start_time =ros::Time::now().toSec();
 
 			//add_neighbors will update the dists if an already added node is added twice
 			//and the new node has an improved dist
 			add_neighbors(map, finished, pqueue, cur, i);
 
-			end_lsd = ros::Time::now().toSec();
-			ROS_DEBUG("4: %lf", end_lsd - start_time);
-
 			#ifdef DISPLAY
 
-			pcl::PointXYZ pt;
-			
-			mapToWorld(cur.pt.x, cur.pt.y, pt.x, pt.y);
-			pt.z    = (0.01) * cur.pt.t;;
+				pcl::PointXYZ pt;
+				
+				mapToWorld(cur.pt.x, cur.pt.y, pt.x, pt.y);
+				pt.z    = (0.01) * cur.pt.t;;
 
-			pt_cloud2_.push_back(pt);
-			
-			test_pub2_.publish(pt_cloud2_);
+				pt_cloud2_.push_back(pt);
+				
+				test_pub2_.publish(pt_cloud2_);
 
 			#endif
 
@@ -205,8 +156,6 @@ namespace timeglobal_planner
 
 	inline void Dijkstra::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index){
 
-		
-		
 		//add current location at next time
 		add_neighbor(map, finished, pqueue, cur, index, 0, 0, TIME_STEP);	
 		
@@ -236,7 +185,6 @@ namespace timeglobal_planner
 	}
 
 	inline void Dijkstra::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index, int dx, int dy, int dt){
-		double start_time =ros::Time::now().toSec();
 		Node new_node;
 
 		new_node.pt.x = cur.pt.x + dx;
@@ -244,30 +192,9 @@ namespace timeglobal_planner
 		new_node.pt.t = cur.pt.t + dt;
 		new_node.prev = index;
 
-		double end_lsd = ros::Time::now().toSec();
-		// time_1 += end_lsd - start_time;
-		// ROS_DEBUG("add_neighbor - 1: %lf", time_1 / ++iter_1);
-
-		start_time =ros::Time::now().toSec();
-
 		if(!finished_node(finished, new_node)){
-			end_lsd = ros::Time::now().toSec();
-			time_2 += end_lsd - start_time;
-			ROS_DEBUG("add_neighbor - 2: %lf", time_2 / ++iter_2);
-			// start_time =ros::Time::now().toSec();
-
 			if(valid(get_occ(map, new_node.pt.x, new_node.pt.y, new_node.pt.t))){
-
-				// end_lsd = ros::Time::now().toSec();
-				// time_3 += end_lsd - start_time;
-				// ROS_DEBUG("add_neighbor - 3: %lf", time_3 / ++iter_3);
-				start_time =ros::Time::now().toSec();
-				
 				add_node(pqueue, new_node);
-				end_lsd = ros::Time::now().toSec();
-				time_4 += end_lsd - start_time;
-		ROS_DEBUG("add_neighbor - 4: %lf", time_4 / ++iter_4);
-				
 			}
 		}
 	}
@@ -290,14 +217,14 @@ namespace timeglobal_planner
 
 		#ifdef DISPLAY
 
-		pcl::PointXYZ pt;
-		
-		mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
-		pt.z    = (0.01) * node.pt.t;
+			pcl::PointXYZ pt;
+			
+			mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
+			pt.z    = (0.01) * node.pt.t;
 
-		pt_cloud_.push_back(pt);
-		
-		test_pub_.publish(pt_cloud_);
+			pt_cloud_.push_back(pt);
+			
+			test_pub_.publish(pt_cloud_);
 
 		#endif
 
