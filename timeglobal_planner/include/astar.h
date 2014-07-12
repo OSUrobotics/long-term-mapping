@@ -108,7 +108,7 @@ namespace timeglobal_planner
 
 		inline int get_endtime(const timemap_server::TimeLapseMap &map);
 
-		
+		inline void add_finished(std::vector< std::vector<Node> > &finished, Node cur);
 
 		void mapToWorld(int mx, int my, double& wx, double& wy);
 

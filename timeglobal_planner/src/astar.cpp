@@ -70,8 +70,9 @@ namespace timeglobal_planner
 
 		if(plan(map_, path, start_pt, goal_pt)){
 			publish_path(path);
-			ROS_DEBUG("Path published")
+			ROS_DEBUG("Path published");
 		}
+	}
 
 	bool AStar::plan(const timemap_server::TimeLapseMap &map, nav_msgs::Path &path, Point start_pt, Point goal_pt) {
 		
@@ -101,6 +102,7 @@ namespace timeglobal_planner
 
 		std::vector<Node> pqueue;
 		std::vector<Node> finished;
+		std::vector< std::vector<Node> > finished_new;
 
 		Node cur;
 
@@ -334,6 +336,11 @@ namespace timeglobal_planner
 			return -1;
 		}
 	}
+
+	inline void AStar::add_finished(std::vector< std::vector<Node> > &finished, Node cur){
+
+	}
+
 
 	void AStar::mapToWorld(int mx, int my, double& wx, double& wy){
 		wx = origin_x_ + (mx + 0.5) * resolution_;
