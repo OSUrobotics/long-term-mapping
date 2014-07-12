@@ -10,25 +10,21 @@ namespace timeglobal_planner
 		path_pub_ = private_nh.advertise<nav_msgs::Path>("/path", 1);
 
 		#ifdef DISPLAY
-		// test_pub_ = private_nh.advertise<geometry_msgs::PoseStamped>("/test_pose", 1);
-		test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
-		test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
 
-		pt_cloud_.header.frame_id = "map";
-		pt_cloud2_.header.frame_id = "map";
+			test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
+			test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
+
+			pt_cloud_.header.frame_id = "map";
+			pt_cloud2_.header.frame_id = "map";
 
 		#endif
-
-		ROS_DEBUG("registered!");
-		std::fflush(NULL);
-	
 
 		ros::spin();
 	}
 
 	void AStar::timemap_callback(const timemap_server::TimeLapseMap &map){
 		if(map.tmap.size() == 0){
-			ROS_ERROR("map cannot be empty\n");
+			ROS_ERROR("Map cannot be empty\n");
 			return;
 		}
 
@@ -45,22 +41,14 @@ namespace timeglobal_planner
 		end_time_    = get_endtime(map);
 
 		
-		ROS_DEBUG("received %lu maps of size %d X %d and duration %d\n", map.tmap.size(), size_x_, size_y_, end_time_);
-		std::fflush(NULL);
-			
+		ROS_DEBUG("Received %lu maps of size %d X %d and duration %d\n", map.tmap.size(), size_x_, size_y_, end_time_);
 
 		initialized_ = true;
 	}
 
-	void AStar::goal_callback(const geometry_msgs::PoseStamped& goal){
-		// double mx1, my1, mx2, my2;
-		// mapToWorld(2000, 2000, mx1, my1);
-		// mapToWorld(2000, 1925, mx2, my2);
-
-		// ROS_DEBUG("world location: %f X %f, %f X %f", mx1, my1, mx2, my2);
-			
+	void AStar::goal_callback(const geometry_msgs::PoseStamped& goal){			
 		if(!initialized_){
-			ROS_WARN("path cannot be found: map not yet initialized");
+			ROS_WARN("Path cannot be found: map not yet initialized");
 			return;
 		}
 		nav_msgs::Path path;
@@ -72,40 +60,31 @@ namespace timeglobal_planner
 		start_pt.t = 0;
 
 		if(!worldToMap(goal.pose.position.x, goal.pose.position.y, goal_pt.x, goal_pt.y)){
-			ROS_WARN("goal point outside of known data, navigation will fail");
+			ROS_WARN("Goal point outside of known data, navigation will fail");
 		}
 		;
 		goal_pt.t  = 1000;
 
 		
-		ROS_DEBUG("received goal at (%f, %f) for time %d\n", goal.pose.position.x, goal.pose.position.y, goal_pt.t);
-		std::fflush(NULL);
-	
+		ROS_DEBUG("Received goal at (%f, %f) for time %d\n", goal.pose.position.x, goal.pose.position.y, goal_pt.t);
 
 		if(plan(map_, path, start_pt, goal_pt)){
-			
-			ROS_DEBUG("before publish (after plan)");
-		std::fflush(NULL);
-				
 			publish_path(path);
+			ROS_DEBUG("Path published")
 		}
-
-		
-		ROS_DEBUG("after publish");
-		std::fflush(NULL);
-	}
 
 	bool AStar::plan(const timemap_server::TimeLapseMap &map, nav_msgs::Path &path, Point start_pt, Point goal_pt) {
 		
-		ROS_DEBUG("planning...\n");
-		std::fflush(NULL);
+		ROS_DEBUG("Planning...\n");
 
 		#ifdef DISPLAY
 
-		pt_cloud_.clear();
-		pt_cloud2_.clear();
+			pt_cloud_.clear();
+			pt_cloud2_.clear();
 		
 		#endif
+
+		// Used to time code...
 		time_1 = 0;
 		iter_1 = 0;
 
@@ -140,7 +119,7 @@ namespace timeglobal_planner
 		int i = 0;
 		while(!pqueue.empty()){
 			ROS_DEBUG("time: %d", cur.pt.t);
-			// start_time =ros::Time::now().toSec();
+
 			// ROS_DEBUG("len heap: %lu", pqueue.size());
 			// ROS_DEBUG("len finished: %lu", pqueue.size());
 
@@ -149,25 +128,12 @@ namespace timeglobal_planner
 			std::pop_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
 			pqueue.pop_back();
 
-			// end_lsd = ros::Time::now().toSec();
-			// ROS_DEBUG("2: %lf", end_lsd - start_time);
-			// start_time =ros::Time::now().toSec();
-
 			//we found the shortest path to the goal!
 			if(cur == goal_){
-				ROS_DEBUG("getting path...");
+				ROS_DEBUG("Retrieving path...");
 				return get_path(path, cur, finished);
 			}
 
-			//TODO: make it possible to navigate with the base map when end time is exceeded
-			//we do not have enough data to navigate to destination..
-			if(cur.pt.t > end_time_){
-				ROS_DEBUG("we ran out of time...");
-				return false;
-			}
-	
-			// end_lsd = ros::Time::now().toSec();
-			// ROS_DEBUG("3: %lf", end_lsd - start_time);
 			// start_time =ros::Time::now().toSec();
 
 			//add_neighbors will update the dists if an already added node is added twice
@@ -179,14 +145,14 @@ namespace timeglobal_planner
 
 			#ifdef DISPLAY
 
-			pcl::PointXYZ pt;
-			
-			mapToWorld(cur.pt.x, cur.pt.y, pt.x, pt.y);
-			pt.z    = (0.01) * cur.pt.t;;
+				pcl::PointXYZ pt;
+				
+				mapToWorld(cur.pt.x, cur.pt.y, pt.x, pt.y);
+				pt.z    = (0.01) * cur.pt.t;;
 
-			pt_cloud2_.push_back(pt);
-			
-			test_pub2_.publish(pt_cloud2_);
+				pt_cloud2_.push_back(pt);
+				
+				test_pub2_.publish(pt_cloud2_);
 
 			#endif
 
@@ -196,7 +162,7 @@ namespace timeglobal_planner
 			i++;
 		}
 
-		ROS_DEBUG("no path exists");
+		ROS_WARN("Could not find path.");
 		return false;
 	}
 
@@ -274,25 +240,21 @@ namespace timeglobal_planner
 				if(pqueue[i].pt.t > node.pt.t){
 					pqueue[i].prev = node.prev;
 					pqueue[i].pt.t = node.pt.t;
-
-					
-
 				}
-
 				return;
 			} 
 		}
 
 		#ifdef DISPLAY
 
-		pcl::PointXYZ pt;
-		
-		mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
-		pt.z    = (0.01) * node.pt.t;
+			pcl::PointXYZ pt;
+			
+			mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
+			pt.z    = (0.01) * node.pt.t;
 
-		pt_cloud_.push_back(pt);
-		
-		test_pub_.publish(pt_cloud_);
+			pt_cloud_.push_back(pt);
+			
+			test_pub_.publish(pt_cloud_);
 
 		#endif
 
@@ -356,24 +318,19 @@ namespace timeglobal_planner
 		int i=0;
 		while(map.tmap[i].end < t){
 			if(map.tmap.size() <= ++i){
-				ROS_DEBUG("We've run out of map...");
+				//TODO: make it possible to navigate with the base map when end time is exceeded
+				//we do not have enough data to navigate to destination..
+				ROS_WARN("Insufficient map data. End time has been exceeded.");
 				return -1;
 			}
 		}
 
-		if(map.tmap[i].end == t){
-			ROS_DEBUG("transitioning to map %d at time %d", i, t);
-		}
-
 		//find cell in map that corresponds
-		ny = size_y_;
-
-		if(ny * y + x >= 0 && ny * y + x < map.tmap[i].map.data.size()){
-			return map.tmap[i].map.data[ny * y + x];
+		if(size_y_ * y + x >= 0 && size_y_ * y + x < map.tmap[i].map.data.size()){
+			return map.tmap[i].map.data[size_y_ * y + x];
 		}
 		else{
-			ROS_DEBUG("We tried to go outside of bounds...");
-
+			ROS_WARN("Attempted to access data outside of map bounds.");
 			return -1;
 		}
 	}
