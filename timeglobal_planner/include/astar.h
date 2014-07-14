@@ -27,11 +27,11 @@
 
 //TODO: params!!!
 
-#define DISPLAY
+// #define DISPLAY
 
-#define NORM_STEP    2
-#define DIAG_STEP    3
-#define TIME_STEP    1
+#define NORM_STEP    5
+#define DIAG_STEP    7
+#define TIME_STEP    50
 
 #define LETHAL_COST  100
 #define OPEN_COST    0
@@ -88,7 +88,7 @@ namespace timeglobal_planner
 		inline void add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur);
 
 		//as implied..
-		inline void add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt);
+		inline void add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt, char dir);
 
 		//adds node to neighbors. if already present, updates dist
 		inline void add_node(std::vector<Node> &pqueue, Node node);
@@ -148,13 +148,15 @@ namespace timeglobal_planner
 
 		int end_time_;
 
-		#ifdef DISPLAY
+		bool display_;
+
+		// int TIME_STEP;
+
 		ros::Publisher test_pub_;
 		ros::Publisher test_pub2_;
 
 		pcl::PointCloud<pcl::PointXYZ> pt_cloud_;
 		pcl::PointCloud<pcl::PointXYZ> pt_cloud2_;
-		#endif
 
 		double time_1, time_2, time_3, time_4, time_5, time_6, time_7;
 		int iter_1, iter_2, iter_3, iter_4, iter_5, iter_6, iter_7;

@@ -15,6 +15,13 @@ struct Point {
 struct Node {
 	Point pt;
 	Point prev;
+
+	//  _ _ _
+	// |q|f|e|
+	// |l|u|r|
+	// |z|b|c|
+	//
+	char dir;
 };
 
 bool operator==(const Node& lhs, const Node& rhs){return lhs.pt.x == rhs.pt.x && lhs.pt.y == rhs.pt.y;}

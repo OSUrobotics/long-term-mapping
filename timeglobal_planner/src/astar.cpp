@@ -1,5 +1,7 @@
 #include "../include/astar.h"
 
+//14.266219: (-3.989190, 2.974547)
+
 namespace timeglobal_planner
 {
 	AStar::AStar(){
@@ -9,7 +11,10 @@ namespace timeglobal_planner
 		goal_sub_ = private_nh.subscribe("/nav_goal", 1, &timeglobal_planner::AStar::goal_callback, this);
 		path_pub_ = private_nh.advertise<nav_msgs::Path>("/path", 1);
 
-		#ifdef DISPLAY
+		private_nh.param<bool>("display", display_, false);
+		// private_nh.param<int>("step", TIME_STEP, 50);
+
+		if(display_){
 
 			test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
 			test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
@@ -17,7 +22,7 @@ namespace timeglobal_planner
 			pt_cloud_.header.frame_id = "map";
 			pt_cloud2_.header.frame_id = "map";
 
-		#endif
+		}
 
 		ros::spin();
 	}
@@ -78,12 +83,12 @@ namespace timeglobal_planner
 		
 		ROS_DEBUG("Planning...\n");
 
-		#ifdef DISPLAY
+		if(display_){
 
 			pt_cloud_.clear();
 			pt_cloud2_.clear();
 		
-		#endif
+		}
 
 		// Used to time code...
 		time_1 = 0;
@@ -98,7 +103,9 @@ namespace timeglobal_planner
 		time_4 = 0;
 		iter_4 = 0;
 
-		// double start_time =ros::Time::now().toSec();
+		double start_time =ros::Time::now().toSec();
+		double full_time  =ros::Time::now().toSec();
+
 
 		std::vector< Node > pqueue;
 		// std::vector< Node > finished;
@@ -108,14 +115,15 @@ namespace timeglobal_planner
 
 		start_.pt     = start_pt;
 		start_.prev.t = -1;
+		start_.dir    = 'u';
 		
 		goal_.pt      = goal_pt;
 		goal_.prev.t  = -1;
 
 		pqueue.push_back(start_);
 
-		// double end_lsd = ros::Time::now().toSec();
-		// ROS_DEBUG("1: %lf", end_lsd - start_time);
+		double end_lsd = ros::Time::now().toSec();
+		ROS_DEBUG("1: %lf", end_lsd - start_time);
 
 	
 		while(!pqueue.empty()){
@@ -131,20 +139,22 @@ namespace timeglobal_planner
 
 			//we found the shortest path to the goal!
 			if(cur == goal_){
+				ROS_DEBUG("full time: %lf", ros::Time::now().toSec() - full_time);
 				ROS_DEBUG("Retrieving path...");
 				return get_path(path, cur, finished);
 			}
 
-			// start_time =ros::Time::now().toSec();
+			start_time =ros::Time::now().toSec();
 
 			//add_neighbors will update the dists if an already added node is added twice
 			//and the new node has an improved dist
 			add_neighbors(map, finished, pqueue, cur);
 
-			// end_lsd = ros::Time::now().toSec();
-			// ROS_DEBUG("4: %lf", end_lsd - start_time);
+			end_lsd = ros::Time::now().toSec();
+			time_2 += end_lsd - start_time;
+			ROS_DEBUG("2: %lf", time_2 / ++iter_2);
 
-			#ifdef DISPLAY
+			if(display_){
 
 				pcl::PointXYZ pt;
 				
@@ -155,11 +165,17 @@ namespace timeglobal_planner
 				
 				test_pub2_.publish(pt_cloud2_);
 
-			#endif
+			}
+
+			start_time =ros::Time::now().toSec();
 
 			//mark node as completed
 			// finished.push_back(cur);
 			add_finished(finished, cur);
+
+			end_lsd = ros::Time::now().toSec();
+			time_3 += end_lsd - start_time;
+			ROS_DEBUG("3: %lf", time_3 / ++iter_3);
 		}
 
 		ROS_WARN("Could not find path.");
@@ -273,7 +289,6 @@ namespace timeglobal_planner
 		finished[cur.pt.t][index_x][index_y].prev.y = cur.prev.y;
 		finished[cur.pt.t][index_x][index_y].prev.t = cur.prev.t;
 		// ROS_DEBUG("add_finished: 10");
-
 	}
 
 	inline Node AStar::get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur){
@@ -284,6 +299,7 @@ namespace timeglobal_planner
 	}
 
 	inline bool AStar::finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node){
+		int index_x, index_y;
 		// ROS_DEBUG("finished_node: 1");
 
 		if(finished.size() <= node.pt.t){
@@ -298,19 +314,19 @@ namespace timeglobal_planner
 
 		// ROS_DEBUG("finished_node: 3");
 
-		if(node.pt.x >= finished[node.pt.t][0][0].pt.x + finished[node.pt.t].size()){
+		if(node.pt.x < finished[node.pt.t][0][0].pt.x){
 			return false;
-		}
+		}		
 
 		// ROS_DEBUG("finished_node: 4");
 
-		if(node.pt.x < finished[node.pt.t][0][0].pt.x){
+		if(node.pt.x >= finished[node.pt.t][0][0].pt.x + finished[node.pt.t].size()){
 			return false;
 		}
 
 		// ROS_DEBUG("finished_node: 5");
 
-		int index_x = node.pt.x - finished[node.pt.t][0][0].pt.x;
+		index_x = node.pt.x - finished[node.pt.t][0][0].pt.x;
 
 		if(finished[node.pt.t][index_x].size() == 0){
 			return false;
@@ -318,17 +334,17 @@ namespace timeglobal_planner
 
 		// ROS_DEBUG("finished_node: 6");
 
-		if(node.pt.y >= finished[node.pt.t][index_x][0].pt.y + finished[node.pt.t][index_x].size()){
+		if(node.pt.y < finished[node.pt.t][index_x][0].pt.y){
 			return false;
 		}
 
 		// ROS_DEBUG("finished_node: 7");
 
-		if(node.pt.y < finished[node.pt.t][index_x][0].pt.y){
+		if(node.pt.y >= finished[node.pt.t][index_x][0].pt.y + finished[node.pt.t][index_x].size()){
 			return false;
 		}
 
-		int index_y = node.pt.y - finished[node.pt.t][index_x][0].pt.y;
+		index_y = node.pt.y - finished[node.pt.t][index_x][0].pt.y;
 
 		// ROS_DEBUG("finished_node: 8");
 
@@ -352,7 +368,7 @@ namespace timeglobal_planner
 		cur = goal;
 
 		//traceback through the path from goal to start
-		ROS_DEBUG("get_path: 1");
+		// ROS_DEBUG("get_path: 1");
 		while(!is_start(cur)){
 			geometry_msgs::PoseStamped pose;
 			pose.header.stamp = ros::Time::now();
@@ -368,47 +384,74 @@ namespace timeglobal_planner
 
 			path.poses.push_back(pose);
 
-			ROS_DEBUG("get_path: 2");
+			// ROS_DEBUG("get_path: 2");
 
 
 			cur = get_prev(finished, cur);
 
-			ROS_DEBUG("get_path: 3");
+			// ROS_DEBUG("get_path: 3");
 		}
 
 		return !path.poses.empty();
 	}
 
 	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
-		//add current location at next time
-		add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP);	
-		
-		//add up location at next time
-		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP);
+		// if(cur.dir == 'u'){
+			//add current location at next time
+			add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
+		// }
 
-		//add down location at next time
-		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP);
+		if(cur.dir == 'u' || cur.dir == 'f' || cur.dir == 'q' || cur.dir == 'e'){
+			//add forward location at next time
+			add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+		}
 
-		//add left location at next time
-		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP);
+		if(cur.dir == 'u' || cur.dir == 'b' || cur.dir == 'z' || cur.dir == 'c'){
+			//add backward location at next time
+			add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+		}
 
-		//add right location at next time
-		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP);
+		if(cur.dir == 'u' || cur.dir == 'l' || cur.dir == 'q' || cur.dir == 'z'){
+			//add left location at next time
+			add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+		}
 
-		//add up left location at next time
-		add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP);
+		if(cur.dir == 'u' || cur.dir == 'r' || cur.dir == 'e' || cur.dir == 'c'){
+			//add right location at next time
+			add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+		}
 
-		//add up right location at next time
-		add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP);
+		if(cur.dir == 'u' || cur.dir == 'q'
+			|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'u'
+			|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'l'){
 
-		//add down left location at next time
-		add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP);
+			//add up left location at next time
+			add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
+		}
 
-		//add current location at next time
-		add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP);
+		if(cur.dir == 'u' || cur.dir == 'e'
+			|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'u'
+			|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'r'){
+			//add up right location at next time
+			add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
+		}
+
+		if(cur.dir == 'u' || cur.dir == 'z'
+			|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'd'
+			|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'l'){
+			//add down left location at next time
+			add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
+		}
+
+		if(cur.dir == 'u' || cur.dir == 'c'
+			|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'd'
+			|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'r'){
+			//add current location at next time
+			add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
+		}
 	}
 
-	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt){
+	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt, char dir){
 		// double start_time =ros::Time::now().toSec();
 		Node new_node;
 
@@ -418,6 +461,7 @@ namespace timeglobal_planner
 		new_node.prev.t = cur.pt.t;
 		new_node.prev.x = cur.pt.x;
 		new_node.prev.y = cur.pt.y;
+		new_node.dir    = dir;
 
 		// double end_lsd = ros::Time::now().toSec();
 		// time_1 += end_lsd - start_time;
@@ -440,10 +484,10 @@ namespace timeglobal_planner
 				// start_time =ros::Time::now().toSec();
 				
 				add_node(pqueue, new_node);
+
 				// end_lsd = ros::Time::now().toSec();
 				// time_4 += end_lsd - start_time;
-		// ROS_DEBUG("add_neighbor - 4: %lf", time_4 / ++iter_4);
-				
+				// ROS_DEBUG("add_neighbor - 4: %lf", time_4 / ++iter_4);
 			}
 		}
 	}
@@ -460,7 +504,7 @@ namespace timeglobal_planner
 			} 
 		}
 
-		#ifdef DISPLAY
+		if(display_){
 
 			pcl::PointXYZ pt;
 			
@@ -471,7 +515,7 @@ namespace timeglobal_planner
 			
 			test_pub_.publish(pt_cloud_);
 
-		#endif
+		}
 
 		pqueue.push_back(node);
 		std::push_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
