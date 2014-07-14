@@ -102,15 +102,15 @@ include_directories(include
 )
 
 ## Declare a cpp library
-add_library(dijkstra
- src/dijkstra.cpp
-)
-add_dependencies(dijkstra dijkstra_gencfg)
-add_dependencies(dijkstra dijkstra_gencpp)
+# add_library(dijkstra
+#  src/dijkstra.cpp
+# )
+# add_dependencies(dijkstra dijkstra_gencfg)
+# add_dependencies(dijkstra dijkstra_gencpp)
 
-target_link_libraries(dijkstra
- ${catkin_LIBRARIES}
-)
+# target_link_libraries(dijkstra
+#  ${catkin_LIBRARIES}
+# )
 
 add_library(astar
  src/astar.cpp
@@ -130,7 +130,7 @@ add_executable(planner_node src/planner_node.cpp)
 # add_dependencies(planner_node timeglobal_planner_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(planner_node dijkstra astar
+target_link_libraries(planner_node astar
  ${catkin_LIBRARIES} 
 )
 
