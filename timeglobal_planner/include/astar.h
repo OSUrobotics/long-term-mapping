@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <vector>
 #include <queue>
+#include <deque>
 
 // Steps in time required
 
@@ -84,10 +85,10 @@ namespace timeglobal_planner
 
 		//will update dists as neighbors are added. neighbors that are added will have prev set to cur
 		//note: neighbors are in time levels below cur based on the values of their respective movement
-		inline void add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index);
+		inline void add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur);
 
 		//as implied..
-		inline void add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index, int dx, int dy, int dt);
+		inline void add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt);
 
 		//adds node to neighbors. if already present, updates dist
 		inline void add_node(std::vector<Node> &pqueue, Node node);
@@ -99,16 +100,24 @@ namespace timeglobal_planner
 		inline double get_occ(const timemap_server::TimeLapseMap &map, int x, int y, int t);
 
 		//traces back the path and returns a list of waypoints
-		bool get_path(nav_msgs::Path &path, Node goal, const std::vector<Node> &finished);
+		bool get_path(nav_msgs::Path &path, Node goal, const std::vector< std::deque< std::deque< Node > > > &finished);
 
 		void publish_path(nav_msgs::Path &path);
 
 		//checks if node has been fully processed
-		inline bool finished_node(const std::vector<Node> &finished, Node node);
+		// inline bool finished_node(const std::vector<Node> &finished, Node node);
 
 		inline int get_endtime(const timemap_server::TimeLapseMap &map);
 
-		inline void add_finished(std::vector< std::vector<Node> > &finished, Node cur);
+		// inline void add_finished(std::vector< std::vector<Node> > &finished, Node cur);
+
+		inline void add_finished(std::vector< std::deque< std::deque< Node > > > &finished, Node cur);
+
+		inline Node get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur);
+
+		inline bool finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node);
+
+		inline bool is_start(const Node node);
 
 		void mapToWorld(int mx, int my, double& wx, double& wy);
 

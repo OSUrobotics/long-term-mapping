@@ -100,17 +100,17 @@ namespace timeglobal_planner
 
 		// double start_time =ros::Time::now().toSec();
 
-		std::vector<Node> pqueue;
-		std::vector<Node> finished;
-		std::vector< std::vector<Node> > finished_new;
+		std::vector< Node > pqueue;
+		// std::vector< Node > finished;
+		std::vector< std::deque< std::deque< Node > > > finished;
 
 		Node cur;
 
-		start_.pt = start_pt;
-		start_.prev = -1;
-
-		goal_.pt = goal_pt;
-		goal_.prev = -1;
+		start_.pt     = start_pt;
+		start_.prev.t = -1;
+		
+		goal_.pt      = goal_pt;
+		goal_.prev.t  = -1;
 
 		pqueue.push_back(start_);
 
@@ -118,10 +118,7 @@ namespace timeglobal_planner
 		// ROS_DEBUG("1: %lf", end_lsd - start_time);
 
 	
-		int i = 0;
 		while(!pqueue.empty()){
-			ROS_DEBUG("time: %d", cur.pt.t);
-
 			// ROS_DEBUG("len heap: %lu", pqueue.size());
 			// ROS_DEBUG("len finished: %lu", pqueue.size());
 
@@ -129,6 +126,8 @@ namespace timeglobal_planner
 			cur = pqueue.front();
 			std::pop_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
 			pqueue.pop_back();
+
+			// ROS_DEBUG("time: %d", cur.pt.t);
 
 			//we found the shortest path to the goal!
 			if(cur == goal_){
@@ -140,7 +139,7 @@ namespace timeglobal_planner
 
 			//add_neighbors will update the dists if an already added node is added twice
 			//and the new node has an improved dist
-			add_neighbors(map, finished, pqueue, cur, i);
+			add_neighbors(map, finished, pqueue, cur);
 
 			// end_lsd = ros::Time::now().toSec();
 			// ROS_DEBUG("4: %lf", end_lsd - start_time);
@@ -159,52 +158,266 @@ namespace timeglobal_planner
 			#endif
 
 			//mark node as completed
-			finished.push_back(cur);
-
-			i++;
+			// finished.push_back(cur);
+			add_finished(finished, cur);
 		}
 
 		ROS_WARN("Could not find path.");
 		return false;
 	}
 
-	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index){
-		//add current location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 0, 0, TIME_STEP);	
+	inline void AStar::add_finished(std::vector< std::deque< std::deque< Node > > > &finished, Node cur){
+		// ROS_DEBUG("add_finished: 1");
+		int index_x, index_y;
+
+		//longest time seen yet
+		if(cur.pt.t + 1 > finished.size()){
+			finished.resize(cur.pt.t + 1);
+		}
+
+		// ROS_DEBUG("add_finished: 2");
+
+
+		//time that has not been used yet
+		if(finished[cur.pt.t].size() == 0){
+			std::deque< Node > vy;
+			vy.push_back(cur);
+			finished[cur.pt.t].push_back(vy);
+
+			return;
+		}
+
+		// ROS_DEBUG("add_finished: 3");
+
+
+		//find correct x and allocate memory
+
+		//need to add row to front of deque
+		if(cur.pt.x < finished[cur.pt.t][0][0].pt.x){
+			std::deque< Node > temp;
+			for(int i = finished[cur.pt.t][0][0].pt.x - cur.pt.x; i > 0; i--){
+				finished[cur.pt.t].push_front(temp);
+			}
+			index_x = 0;
+
+			// ROS_DEBUG("add_finished: 4");
+		}
+
 		
-		//add up location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 0, 1, NORM_STEP);
 
-		//add down location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 0, -1, NORM_STEP);
 
-		//add left location at next time
-		add_neighbor(map, finished, pqueue, cur, index, -1, 0, NORM_STEP);
+		//need to add row to back of deque
+		else if(cur.pt.x >= finished[cur.pt.t][0][0].pt.x + finished[cur.pt.t].size()){
+			finished[cur.pt.t].resize(cur.pt.x - finished[cur.pt.t][0][0].pt.x + 1);
+			index_x = cur.pt.x - finished[cur.pt.t][0][0].pt.x;
+			// ROS_DEBUG("add_finished: 5");
+		}
+		
 
-		//add right location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 1, 0, NORM_STEP);
 
-		//add up left location at next time
-		add_neighbor(map, finished, pqueue, cur, index, -1, 1, DIAG_STEP);
+		//row already present...
+		else{
+			index_x = cur.pt.x - finished[cur.pt.t][0][0].pt.x;
+			// ROS_DEBUG("add_finished: 6");
+		}
+		
 
-		//add up right location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 1, 1, DIAG_STEP);
 
-		//add down left location at next time
-		add_neighbor(map, finished, pqueue, cur, index, -1, -1, DIAG_STEP);
+		//find correct y and allocate memory
 
-		//add current location at next time
-		add_neighbor(map, finished, pqueue, cur, index, 1, -1, DIAG_STEP);
+		//row that has not been used yet
+		if(finished[cur.pt.t][index_x].size() == 0){
+			finished[cur.pt.t][index_x].push_back(cur);
+
+			return;
+		}
+
+		//need to add node to front of deque
+		if(cur.pt.y < finished[cur.pt.t][index_x][0].pt.y){
+			// ROS_DEBUG("add_finished: 7a");
+			Node temp;
+			// ROS_DEBUG("i: %d, finished.pt.y: %d, cur.pt.y: %d", finished[cur.pt.t][index_x][0].pt.y - cur.pt.y, finished[cur.pt.t][index_x][0].pt.y, cur.pt.y);
+			for(int i = finished[cur.pt.t][index_x][0].pt.y - cur.pt.y; i > 0; i--){
+				finished[cur.pt.t][index_x].push_front(temp);
+			}
+			index_y = 0;
+			// ROS_DEBUG("add_finished: 7b");
+		}
+		
+
+
+		//need to add node to back of deque
+		else if(cur.pt.y >= finished[cur.pt.t][index_x][0].pt.y + finished[cur.pt.t][index_x].size()){
+			// ROS_DEBUG("add_finished: 8a");
+
+			finished[cur.pt.t][index_x].resize(cur.pt.y - finished[cur.pt.t][index_x][0].pt.y + 1);
+			index_y = cur.pt.y - finished[cur.pt.t][index_x][0].pt.y;
+			// ROS_DEBUG("add_finished: 8b");
+		}
+		
+
+
+		//need to add node to middle of deque
+		else{
+			index_y = cur.pt.y - finished[cur.pt.t][index_x][0].pt.y;
+			// ROS_DEBUG("add_finished: 9");
+		}
+		
+
+
+		//add node
+		finished[cur.pt.t][index_x][index_y].pt.x   = cur.pt.x;
+		finished[cur.pt.t][index_x][index_y].pt.y   = cur.pt.y;
+		finished[cur.pt.t][index_x][index_y].pt.t   = cur.pt.t;
+		finished[cur.pt.t][index_x][index_y].prev.x = cur.prev.x;
+		finished[cur.pt.t][index_x][index_y].prev.y = cur.prev.y;
+		finished[cur.pt.t][index_x][index_y].prev.t = cur.prev.t;
+		// ROS_DEBUG("add_finished: 10");
+
 	}
 
-	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector<Node> &finished, std::vector<Node> &pqueue, Node cur, int index, int dx, int dy, int dt){
+	inline Node AStar::get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur){
+		int index_x = cur.prev.x - finished[cur.prev.t][0][0].pt.x;
+		int index_y = cur.prev.y - finished[cur.prev.t][index_x][0].pt.y;
+
+		return finished[cur.prev.t][index_x][index_y];
+	}
+
+	inline bool AStar::finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node){
+		// ROS_DEBUG("finished_node: 1");
+
+		if(finished.size() <= node.pt.t){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 2");
+
+		if(finished[node.pt.t].size() == 0){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 3");
+
+		if(node.pt.x >= finished[node.pt.t][0][0].pt.x + finished[node.pt.t].size()){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 4");
+
+		if(node.pt.x < finished[node.pt.t][0][0].pt.x){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 5");
+
+		int index_x = node.pt.x - finished[node.pt.t][0][0].pt.x;
+
+		if(finished[node.pt.t][index_x].size() == 0){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 6");
+
+		if(node.pt.y >= finished[node.pt.t][index_x][0].pt.y + finished[node.pt.t][index_x].size()){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 7");
+
+		if(node.pt.y < finished[node.pt.t][index_x][0].pt.y){
+			return false;
+		}
+
+		int index_y = node.pt.y - finished[node.pt.t][index_x][0].pt.y;
+
+		// ROS_DEBUG("finished_node: 8");
+
+		if(finished[node.pt.t][index_x][index_y].pt.t == finished[node.pt.t][index_x][index_y].prev.t){
+			return false;
+		}
+
+		// ROS_DEBUG("finished_node: 9");
+
+		return true;
+	}
+
+	inline bool AStar::is_start(const Node node){
+		//this comment makes sublime happy...
+		return node.prev.t == -1; 
+	}
+
+	bool AStar::get_path(nav_msgs::Path &path, Node goal, const std::vector< std::deque< std::deque< Node > > > &finished){
+		Node cur;
+
+		cur = goal;
+
+		//traceback through the path from goal to start
+		ROS_DEBUG("get_path: 1");
+		while(!is_start(cur)){
+			geometry_msgs::PoseStamped pose;
+			pose.header.stamp = ros::Time::now();
+			pose.header.frame_id = "/map";
+
+			mapToWorld(cur.pt.x, cur.pt.y, pose.pose.position.x, pose.pose.position.y);
+
+			pose.pose.position.z = (0.01) * cur.pt.t;
+			pose.pose.orientation.x = 0.0;
+			pose.pose.orientation.y = 0.0;
+			pose.pose.orientation.z = 0.0;
+			pose.pose.orientation.w = 1.0;
+
+			path.poses.push_back(pose);
+
+			ROS_DEBUG("get_path: 2");
+
+
+			cur = get_prev(finished, cur);
+
+			ROS_DEBUG("get_path: 3");
+		}
+
+		return !path.poses.empty();
+	}
+
+	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+		//add current location at next time
+		add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP);	
+		
+		//add up location at next time
+		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP);
+
+		//add down location at next time
+		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP);
+
+		//add left location at next time
+		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP);
+
+		//add right location at next time
+		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP);
+
+		//add up left location at next time
+		add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP);
+
+		//add up right location at next time
+		add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP);
+
+		//add down left location at next time
+		add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP);
+
+		//add current location at next time
+		add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP);
+	}
+
+	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt){
 		// double start_time =ros::Time::now().toSec();
 		Node new_node;
 
-		new_node.pt.x = cur.pt.x + dx;
-		new_node.pt.y = cur.pt.y + dy;
-		new_node.pt.t = cur.pt.t + dt;
-		new_node.prev = index;
+		new_node.pt.x   = cur.pt.x + dx;
+		new_node.pt.y   = cur.pt.y + dy;
+		new_node.pt.t   = cur.pt.t + dt;
+		new_node.prev.t = cur.pt.t;
+		new_node.prev.x = cur.pt.x;
+		new_node.prev.y = cur.pt.y;
 
 		// double end_lsd = ros::Time::now().toSec();
 		// time_1 += end_lsd - start_time;
@@ -264,33 +477,6 @@ namespace timeglobal_planner
 		std::push_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
 	}
 
-	bool AStar::get_path(nav_msgs::Path &path, Node goal, const std::vector<Node> &finished){
-		int cur;
-
-		cur = goal.prev;
-
-		//traceback through the path from goal to start
-		while(cur != -1){
-			geometry_msgs::PoseStamped pose;
-			pose.header.stamp = ros::Time::now();
-			pose.header.frame_id = "/map";
-
-			mapToWorld(finished[cur].pt.x, finished[cur].pt.y, pose.pose.position.x, pose.pose.position.y);
-
-			pose.pose.position.z = (0.01) * finished[cur].pt.t;
-			pose.pose.orientation.x = 0.0;
-			pose.pose.orientation.y = 0.0;
-			pose.pose.orientation.z = 0.0;
-			pose.pose.orientation.w = 1.0;
-
-			path.poses.push_back(pose);
-
-			cur = finished[cur].prev;
-		}
-
-		return !path.poses.empty();
-	}
-
 	inline int AStar::get_endtime(const timemap_server::TimeLapseMap &map){
 		//this comment makes sublime happy...
 		return map.tmap.back().end;
@@ -303,15 +489,15 @@ namespace timeglobal_planner
 		path_pub_.publish(path);
 	}
 
-	inline bool AStar::finished_node(const std::vector<Node> &finished, Node node){
-		//navigate list backwards because most recent nodes are at back
-		for(int i=finished.size() - 1; i >= 0; i--){
-			if(finished[i] == node && finished[i].pt.t == node.pt.t){
-				return true;
-			}
-		}
-		return false;
-	}
+	// inline bool AStar::finished_node(const std::vector<Node> &finished, Node node){
+	// 	//navigate list backwards because most recent nodes are at back
+	// 	for(int i = finished[node.pt.t].size() - 1; i >= 0; i--){
+	// 		if(finished[node.pt.t][i] == node){
+	// 			return true;
+	// 		}
+	// 	}
+	// 	return false;
+	// }
 
 	inline double AStar::get_occ(const timemap_server::TimeLapseMap &map, int x, int y, int t){
 		int ny;
@@ -337,10 +523,15 @@ namespace timeglobal_planner
 		}
 	}
 
-	inline void AStar::add_finished(std::vector< std::vector<Node> > &finished, Node cur){
+	
 
-	}
+	// inline void AStar::add_finished(std::vector< std::vector<Node> > &finished, Node cur){
+	// 	if(cur.pt.t + 1 > finished.size()){
+	// 		finished.resize(cur.pt.t + 1);
+	// 	}
 
+	// 	finished[cur.pt.t].push_back(cur);
+	// }
 
 	void AStar::mapToWorld(int mx, int my, double& wx, double& wy){
 		wx = origin_x_ + (mx + 0.5) * resolution_;
@@ -380,3 +571,121 @@ namespace timeglobal_planner
 		return false;
 	}
 }
+
+
+// struct Point {
+// 	int x;
+// 	int y;
+// 	int t;
+// };
+
+// struct Node {
+// 	Point pt;
+// 	Point prev;
+// };
+
+// //time< x_pos< y_pos > > >
+// std::vector< std::deque< std::deque< Node > > >;
+
+// 	inline void AStar::add_finished(std::vector< std::deque< std::deque< Node > > > &finished, Node cur){
+// 		int index_x, index_y;
+
+// 		//longest time seen yet
+// 		if(cur.pt.t + 1 > finished.size()){
+// 			finished.resize(cur.pt.t + 1);
+// 		}
+
+// 		//time that has not been used yet
+// 		if(finished[cur.pt.t].size() == 0){
+// 			std::deque< Node > vy;
+// 			vy.push_back(cur);
+// 			finished[cur.pt.t].push_back(vy);
+
+// 			return;
+// 		}
+
+// 		//find correct x and allocate memory
+
+// 		//need to add row to front of deque
+// 		if(cur.pt.x < finished[cur.pt.t][0][0].pt.x){
+// 			std::deque< Node > temp;
+// 			for(int i = finished[cur.pt.t][0][0].pt.x - cur.pt.x; i > 0; i--){
+// 				finished[cur.pt.t].push_front(temp);
+// 			}
+// 			index_x = 0;
+// 		}
+
+// 		//need to add row to back of deque
+// 		else if(cur.pt.x >= finished[cur.pt.t][0][0].pt.x + finished[cur.pt.t].size()){
+// 			finished[cur.pt.t].resize(cur.pt.x - finished[cur.pt.t][0][0].pt.x + 1);
+// 			index_x = cur.pt.x - finished[cur.pt.t][0][0].pt.x;
+// 		}
+
+// 		//row already present...
+// 		else{
+// 			index_x = cur.pt.x - finished[cur.pt.t][0][0].pt.x;
+// 		}
+
+// 		//find correct y and allocate memory
+
+// 		//need to add node to front of deque
+// 		if(cur.pt.y < finished[cur.pt.t][index_x][0].pt.y){
+// 			Node temp;
+// 			for(int i = finished[cur.pt.t][index_x][0].pt.y - cur.pt.y; i > 0; i--){
+// 				finished[cur.pt.t][index_x].push_front(temp);
+// 			}
+// 			index_y = 0;
+// 		}
+
+// 		//need to add node to back of deque
+// 		else if(cur.pt.y >= finished[cur.pt.t][index_x][0].pt.y + finished[cur.pt.t][index_x].size()){
+// 			finished[cur.pt.t][index_x].resize(cur.pt.y - finished[cur.pt.t][index_x][0].pt.y + 1);
+// 			index_y = cur.pt.y - finished[cur.pt.t][index_x][0].pt.y;
+// 		}
+
+// 		//need to add node to middle of deque
+// 		else{
+// 			index_y = cur.pt.y - finished[cur.pt.t][index_x][0].pt.y;
+// 		}
+
+// 		//add node
+// 		finished[cur.pt.t][index_x][index_y].pt.x   = cur.pt.x;
+// 		finished[cur.pt.t][index_x][index_y].pt.y   = cur.pt.y;
+// 		finished[cur.pt.t][index_x][index_y].pt.t   = cur.pt.t;
+// 		finished[cur.pt.t][index_x][index_y].prev.x = cur.prev.x;
+// 		finished[cur.pt.t][index_x][index_y].prev.y = cur.prev.y;
+// 		finished[cur.pt.t][index_x][index_y].prev.t = cur.prev.t;
+// 	}
+
+// 	inline Node AStar::get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur){
+// 		//this comment makes sublime happy...
+// 		return finished[cur.prev.t][cur.prev.x][cur.prev.y];
+// 	}
+
+// 	inline bool AStar::finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node){
+// 		if(finished.size() <= node.pt.t){
+// 			return false;
+// 		}
+
+// 		if(finished[node.pt.t].size() == 0){
+// 			return false;
+// 		}
+
+// 		if(node.pt.x >= finished[node.pt.t][0][0].pt.x + finished[node.pt.t].size()){
+// 			return false;
+// 		}
+
+// 		if(node.pt.x < finished[node.pt.t][0][0].pt.x){
+// 			return false;
+// 		}
+
+// 		if(finished[node.pt.t][node.pt.x][node.pt.y].pt.t == finished[node.pt.t][node.pt.x][node.pt.y].prev.t){
+// 			return false;
+// 		}
+
+// 		return true;
+// 	}
+
+// 	inline bool AStar::is_start(const Node node){
+// 		return node.prev.t == -1; 
+// 	}

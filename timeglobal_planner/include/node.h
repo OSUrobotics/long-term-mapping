@@ -7,9 +7,14 @@ struct Point {
 	int t;
 };
 
+// struct Node {
+// 	Point pt;
+// 	int prev;
+// };
+
 struct Node {
 	Point pt;
-	int prev;
+	Point prev;
 };
 
 bool operator==(const Node& lhs, const Node& rhs){return lhs.pt.x == rhs.pt.x && lhs.pt.y == rhs.pt.y;}
