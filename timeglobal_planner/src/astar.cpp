@@ -241,8 +241,11 @@ namespace timeglobal_planner
 			//update time and prev if new node is better than old
 			if(pqueue[i] == node){
 				if(pqueue[i].pt.t > node.pt.t){
-					pqueue[i].prev = node.prev;
-					pqueue[i].pt.t = node.pt.t;
+					pqueue[i].prev.x = node.prev.x;
+					pqueue[i].prev.y = node.prev.y;
+					pqueue[i].prev.t = node.prev.t;
+					pqueue[i].dir    = node.dir;
+					pqueue[i].pt.t   = node.pt.t;
 				}
 				return;
 			} 
@@ -369,7 +372,7 @@ namespace timeglobal_planner
 		finished[cur.pt.t][index_x][index_y].prev.x = cur.prev.x;
 		finished[cur.pt.t][index_x][index_y].prev.y = cur.prev.y;
 		finished[cur.pt.t][index_x][index_y].prev.t = cur.prev.t;
-		finished[cur.pt.t][index_x][index_y].prev.t = cur.dir;
+		finished[cur.pt.t][index_x][index_y].dir    = cur.dir;
 	}
 
 	inline bool AStar::finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node){
@@ -452,9 +455,6 @@ namespace timeglobal_planner
 			pose.pose.orientation.w = 1.0;
 
 			path.poses.push_back(pose);
-
-			ROS_DEBUG("dir: %c", cur.dir);
-
 
 			cur = get_prev(finished, cur);
 		}
