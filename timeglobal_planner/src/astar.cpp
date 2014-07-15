@@ -142,79 +142,157 @@ namespace timeglobal_planner
 		return map.tmap.back().end;
 	}
 
+	// times:
+	// 2.097859 - (-4.985855, 2.975908)
+	// 1.317784 - (-4.016930, 3.020894)
+	// 3.556497 - ( 0.983357, 3.031751)
 	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
-		//This implements a Jump Point Search neighbor selection. This ignores nodes that
-		//can be traveled to more quickly through another node. The algorithm takes into
-		//account where the parent node is to determine where the node is going. Using this
-		//it culls the nodes that are unnecessary. When traveling in cardinal directions,
-		//only consider the node directly in front. When traveling diagonally, only consider
-		//the node in front and the nodes bordering it. Obstacles can create blocked nodes 
-		//which must also be considered.
-
-		//directions:
-		//  q f e
-		//  l u r
-		//  z b c
-
-		//add current location at next time
-		add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
-
 		//add forward position at next time
-		if(cur.dir == 'u' || cur.dir == 'f' || cur.dir == 'q' || cur.dir == 'e'){
-			add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
-		}
+		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
 
 		//add backward location at next time
-		if(cur.dir == 'u' || cur.dir == 'b' || cur.dir == 'z' || cur.dir == 'c'){
-			add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
-		}
+		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
 
 		//add left location at next time
-		if(cur.dir == 'u' || cur.dir == 'l' || cur.dir == 'q' || cur.dir == 'z'){
-			add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
-		}
+		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
 
 		//add right location at next time
-		if(cur.dir == 'u' || cur.dir == 'r' || cur.dir == 'e' || cur.dir == 'c'){
-			add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
-		}
-
-		//add forward left location at next time
-		if(cur.dir == 'u' || cur.dir == 'q'
-			//if certain neighbors are blocked, maybe include
-			|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
-			|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'l'){
-
-			add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
-		}
-
-		//add forward right location at next time
-		if(cur.dir == 'u' || cur.dir == 'e'
-			//if certain neighbors are blocked, maybe include
-			|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
-			|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'r'){
-
-			add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
-		}
-
-		//add back left location at next time
-		if(cur.dir == 'u' || cur.dir == 'z'
-			//if certain neighbors are blocked, maybe include
-			|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
-			|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'l'){
-
-			add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
-		}
-
-		//add back right location at next time
-		if(cur.dir == 'u' || cur.dir == 'c'
-			//if certain neighbors are blocked, maybe include
-			|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
-			|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'r'){
-
-			add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
-		}
+		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
 	}
+
+	// times:
+	// 3.098328 - (-4.986468, 2.981237)
+	// 1.960431 - (-3.983218, 3.016832)
+	// inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+	// 	//add current location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
+
+	// 	//add forward position at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+
+	// 	//add backward location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+
+	// 	//add left location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+
+	// 	//add right location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+	// }
+
+
+	// times:
+	// 8.249100 - (-4.986468, 3.030174)
+	// 4.697925 - (-4.007739, 3.013862)
+
+	// inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+	// 	//add current location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
+
+	// 	//add forward position at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+
+	// 	//add backward location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+
+	// 	//add left location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+
+	// 	//add right location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+
+	// 	//add forward left location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
+
+	// 	//add forward right location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
+
+	// 	//add back left location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
+
+	// 	//add back right location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
+	// }
+
+
+	// times:
+	// 3.621211 - (-5.005533, 3.015647)
+	// 1.436171 - (-4.018334, 3.044444)
+	// 8.449397 - ( 0.962736, 3.008032)
+
+	// inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+	// 	//This implements a Jump Point Search neighbor selection. This ignores nodes that
+	// 	//can be traveled to more quickly through another node. The algorithm takes into
+	// 	//account where the parent node is to determine where the node is going. Using this
+	// 	//it culls the nodes that are unnecessary. When traveling in cardinal directions,
+	// 	//only consider the node directly in front. When traveling diagonally, only consider
+	// 	//the node in front and the nodes bordering it. Obstacles can create blocked nodes 
+	// 	//which must also be considered.
+
+	// 	//directions:
+	// 	//  q f e
+	// 	//  l u r
+	// 	//  z b c
+
+	// 	//add current location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
+
+	// 	//add forward position at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'f' || cur.dir == 'q' || cur.dir == 'e'){
+	// 		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+	// 	}
+
+	// 	//add backward location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'b' || cur.dir == 'z' || cur.dir == 'c'){
+	// 		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+	// 	}
+
+	// 	//add left location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'l' || cur.dir == 'q' || cur.dir == 'z'){
+	// 		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+	// 	}
+
+	// 	//add right location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'r' || cur.dir == 'e' || cur.dir == 'c'){
+	// 		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+	// 	}
+
+	// 	//add forward left location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'q'
+	// 		//if certain neighbors are blocked, maybe include
+	// 		|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
+	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'l'){
+
+	// 		add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
+	// 	}
+
+	// 	//add forward right location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'e'
+	// 		//if certain neighbors are blocked, maybe include
+	// 		|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
+	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'r'){
+
+	// 		add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
+	// 	}
+
+	// 	//add back left location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'z'
+	// 		//if certain neighbors are blocked, maybe include
+	// 		|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
+	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'l'){
+
+	// 		add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
+	// 	}
+
+	// 	//add back right location at next time
+	// 	if(cur.dir == 'u' || cur.dir == 'c'
+	// 		//if certain neighbors are blocked, maybe include
+	// 		|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
+	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'r'){
+
+	// 		add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
+	// 	}
+	// }
 
 	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt, char dir){
 		Node new_node;
