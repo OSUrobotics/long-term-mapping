@@ -135,13 +135,13 @@ namespace timeglobal_planner
 
 		//The stuff below is mostly for debugging...
 
-		ros::Publisher test_pub_;
-		ros::Publisher test_pub2_;
-		ros::Publisher test_pub3_;
+		ros::Publisher all_points_pub_;
+		ros::Publisher processed_points_pub_;
+		ros::Publisher best_points_pub_;
 
-		pcl::PointCloud<pcl::PointXYZ> pt_cloud_;
-		pcl::PointCloud<pcl::PointXYZ> pt_cloud2_;
-		pcl::PointCloud<pcl::PointXYZ> pt_cloud3_;
+		pcl::PointCloud<pcl::PointXYZ> all_points_;
+		pcl::PointCloud<pcl::PointXYZ> processed_points_;
+		pcl::PointCloud<pcl::PointXYZ> best_points_;
 
 		double time_1, time_2, time_3, time_4, time_5, time_6, time_7;
 		int iter_1, iter_2, iter_3, iter_4, iter_5, iter_6, iter_7;

@@ -118,7 +118,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 1.06
+      Max Intensity: 1.5
       Min Color: 0; 0; 0
       Min Intensity: 0.02
       Name: All Points
@@ -128,7 +128,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.01
       Style: Points
-      Topic: /point_cloud_test
+      Topic: /timeglobal_planner/all_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -147,7 +147,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2.9
+      Max Intensity: 2.26
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Processed Points
@@ -157,7 +157,36 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.01
       Style: Points
-      Topic: /point_cloud_test2
+      Topic: /timeglobal_planner/processed_points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Best Points
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.1
+      Style: Spheres
+      Topic: /timeglobal_planner/best_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -185,22 +214,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 9.07766
+      Distance: 10.167
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.68239
-        Y: 0.936852
-        Z: -0.00369263
+        X: -2.70393
+        Y: 1.6804
+        Z: -0.0630371
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.854797
+      Pitch: 1.3948
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.533208
+      Yaw: 6.0028
     Saved: ~
 Window Geometry:
   Displays:
@@ -218,5 +247,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1615
-  X: 57
-  Y: -4
+  X: 58
+  Y: 24

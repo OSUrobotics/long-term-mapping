@@ -13,11 +13,13 @@ namespace timeglobal_planner
 
 		if(display_){
 
-			test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
-			test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
+			all_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("all_points", 1);
+			processed_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("processed_points", 1);
+			best_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("best_points", 1);
 
-			pt_cloud_.header.frame_id = "map";
-			pt_cloud2_.header.frame_id = "map";
+			all_points_.header.frame_id = "map";
+			processed_points_.header.frame_id = "map";
+			best_points_.header.frame_id = "map";
 
 		}
 
@@ -90,8 +92,9 @@ namespace timeglobal_planner
 		ROS_DEBUG("Planning...\n");
 
 		if(display_){
-			pt_cloud_.clear();
-			pt_cloud2_.clear();
+			all_points_.clear();
+			processed_points_.clear();
+			
 		}
 
 		start_.pt     = start_pt;
@@ -122,11 +125,22 @@ namespace timeglobal_planner
 				pcl::PointXYZ pt;
 				
 				mapToWorld(cur.pt.x, cur.pt.y, pt.x, pt.y);
-				pt.z    = (0.01) * cur.pt.t;;
+				pt.z = (0.01) * cur.pt.t;
 
-				pt_cloud2_.push_back(pt);
-				
-				test_pub2_.publish(pt_cloud2_);
+				processed_points_.push_back(pt);
+				processed_points_pub_.publish(processed_points_);
+
+				for(int i=std::min(5, int(pqueue.size() - 1)); i >= 0; i--){
+					ROS_DEBUG("i: %d", i);
+					mapToWorld(pqueue[i].pt.x, pqueue[i].pt.y, pt.x, pt.y);
+					pt.z = (0.01) * pqueue[i].pt.t;
+
+					best_points_.push_back(pt);
+				}
+
+				best_points_pub_.publish(best_points_);
+
+				best_points_.clear();
 			}
 
 			//mark node as completed
@@ -339,9 +353,9 @@ namespace timeglobal_planner
 			mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
 			pt.z    = (0.01) * node.pt.t;
 
-			pt_cloud_.push_back(pt);
+			all_points_.push_back(pt);
 			
-			test_pub_.publish(pt_cloud_);
+			all_points_pub_.publish(all_points_);
 		}
 	}
 
