@@ -16,11 +16,9 @@ struct Node {
 	Point pt;
 	Point prev;
 
-	//  _ _ _
-	// |q|f|e|
-	// |l|u|r|
-	// |z|b|c|
-	//
+	//  q f e
+	//  l u r
+	//  z b c
 	char dir;
 };
 

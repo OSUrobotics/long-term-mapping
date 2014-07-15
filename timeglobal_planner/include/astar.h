@@ -29,9 +29,9 @@
 
 // #define DISPLAY
 
-#define NORM_STEP    5
-#define DIAG_STEP    7
-#define TIME_STEP    50
+#define NORM_STEP    2
+#define DIAG_STEP    3
+#define TIME_STEP    5
 
 #define LETHAL_COST  100
 #define OPEN_COST    0
@@ -64,61 +64,59 @@ namespace timeglobal_planner
 {
 	class AStar {
 	public:
+		//setup callbacks and params
 		AStar();
+
 		//time_map callback...
 		void timemap_callback(const timemap_server::TimeLapseMap &map);
 
 		//goal callback...
 		void goal_callback(const geometry_msgs::PoseStamped& goal);
 
-		//path planning algorithm... hopefully
-		//returns false if path is trivial (start=end) or if no path is possible in timeframe
+		//path planning algorithm
+		//returns false if path is trivial (start=end) or if no path is possible in the given time
 		bool plan(const timemap_server::TimeLapseMap &map, nav_msgs::Path &path, Point start_pt, Point goal_pt);
 
-		// bool const operator()(const Node &lhs, const Node &rhs);
-
-		// inline int heuristic(const Node& cur);
-
 	private:
-		//diagonal astar heuristic
-		
+		//gets the last time described by the current map set
+		inline int get_endtime(const timemap_server::TimeLapseMap &map);
 
 		//will update dists as neighbors are added. neighbors that are added will have prev set to cur
 		//note: neighbors are in time levels below cur based on the values of their respective movement
 		inline void add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur);
 
-		//as implied..
+		//adds neighbors according to JPS algorithm
 		inline void add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt, char dir);
 
 		//adds node to neighbors. if already present, updates dist
 		inline void add_node(std::vector<Node> &pqueue, Node node);
 
 		//checks if occ value is acceptable
-		inline bool valid(int val){return (val != UNKNOWN_COST) && (val < LETHAL_COST);}
+		inline bool valid(int val);
 
 		//get the value for occupancy at a given location
 		inline double get_occ(const timemap_server::TimeLapseMap &map, int x, int y, int t);
 
-		//traces back the path and returns a list of waypoints
-		bool get_path(nav_msgs::Path &path, Node goal, const std::vector< std::deque< std::deque< Node > > > &finished);
-
-		void publish_path(nav_msgs::Path &path);
-
-		//checks if node has been fully processed
-		// inline bool finished_node(const std::vector<Node> &finished, Node node);
-
-		inline int get_endtime(const timemap_server::TimeLapseMap &map);
-
-		// inline void add_finished(std::vector< std::vector<Node> > &finished, Node cur);
-
+		//add the node to the list of finished nodes
 		inline void add_finished(std::vector< std::deque< std::deque< Node > > > &finished, Node cur);
 
-		inline Node get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur);
-
+		//if the node has been fully processed
 		inline bool finished_node(const std::vector< std::deque< std::deque< Node > > > &finished, Node node);
 
+		//if it is the start node
 		inline bool is_start(const Node node);
 
+		//get the parent node
+		inline Node get_prev(const std::vector< std::deque< std::deque< Node > > > &finished, Node cur);
+
+		//traces back the path and returns a ROS path
+		bool get_path(nav_msgs::Path &path, Node goal, const std::vector< std::deque< std::deque< Node > > > &finished);
+
+		//fixes the header and publishes the path
+		void publish_path(nav_msgs::Path &path);
+
+		//Convert coordinates, taken with minor modifications from
+		//the nav stack global planner
 		void mapToWorld(int mx, int my, double& wx, double& wy);
 
 		bool worldToMap(double wx, double wy, int& mx, int& my);
@@ -150,7 +148,7 @@ namespace timeglobal_planner
 
 		bool display_;
 
-		// int TIME_STEP;
+		//The stuff below is mostly for debugging...
 
 		ros::Publisher test_pub_;
 		ros::Publisher test_pub2_;
