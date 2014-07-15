@@ -3,6 +3,7 @@
 #define ASTAR_H
 
 #include "node.h"
+#include "planner.h"
 
 #include "timemap_server/TimeLapseMap.h"
 #include "timemap_server/TimeLapseOccGrid.h"
@@ -23,22 +24,6 @@
 #include <queue>
 #include <deque>
 
-// Steps in time required
-
-//TODO: params!!!
-
-// #define DISPLAY
-
-#define NORM_STEP    2
-#define DIAG_STEP    3
-#define TIME_STEP    5
-
-#define LETHAL_COST  100
-#define OPEN_COST    0
-#define UNKNOWN_COST -1
-
-
-// #pragma message "in header!"
 
 class CompareNodesHeuristic {
 public:
@@ -152,9 +137,11 @@ namespace timeglobal_planner
 
 		ros::Publisher test_pub_;
 		ros::Publisher test_pub2_;
+		ros::Publisher test_pub3_;
 
 		pcl::PointCloud<pcl::PointXYZ> pt_cloud_;
 		pcl::PointCloud<pcl::PointXYZ> pt_cloud2_;
+		pcl::PointCloud<pcl::PointXYZ> pt_cloud3_;
 
 		double time_1, time_2, time_3, time_4, time_5, time_6, time_7;
 		int iter_1, iter_2, iter_3, iter_4, iter_5, iter_6, iter_7;
