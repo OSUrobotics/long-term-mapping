@@ -1,9 +1,11 @@
-// #include "../include/dijkstra.h"
+#include "../include/potential_grid.h"
 #include "../include/astar.h"
 
 
 
 int main(int argc, char** argv){
+	std::string planner;
+
 	ros::init(argc, argv, "timeglobal_planner");
 	
 	//Show debug output
@@ -11,8 +13,14 @@ int main(int argc, char** argv){
 	   ros::console::notifyLoggerLevelsChanged();
 	}
 
-	// timeglobal_planner::Dijkstra p;
-	timeglobal_planner::AStar p;
+	ros::param::param<std::string>("planner", planner, "astar");
+
+	if(planner == "astar"){
+		timeglobal_planner::AStar p;
+	}
+	else if(planner == "potential_grid"){
+		timeglobal_planner::PotentialGrid p;		
+	}
 
 	ros::spin();
 
