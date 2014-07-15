@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
 )
 
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
