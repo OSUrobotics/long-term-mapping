@@ -1,0 +1,16 @@
+<launch>
+	<!-- Launch Maps for Planner -->
+	<node name="time_map_server" type="map_server" pkg="timemap_server" args="$(find timemap_server)/worlds/test.yaml"/>
+
+	<!-- Launch Maps for Rviz -->
+	<node name="open_map_server" type="map_server" pkg="map_server" args="$(find timemap_server)/worlds/open.yaml">
+		<remap from="/map" to="/open_map"/>
+	</node>
+
+	<node name="closed_map_server" type="map_server" pkg="map_server" args="$(find timemap_server)/worlds/closed.yaml">
+		<remap from="/map" to="/closed_map"/>
+	</node>
+
+	<!-- Launch Rviz -->
+	<node name="rviz" type="rviz" pkg="rviz" args="-d $(find timeglobal_planner)/planner.rviz"/>
+</launch>

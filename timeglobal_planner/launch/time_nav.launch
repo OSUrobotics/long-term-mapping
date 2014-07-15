@@ -1,0 +1,11 @@
+<launch>
+	<!-- Launch A* planner -->
+	<node name="planner" type="planner_node" pkg="timeglobal_planner" output="screen">
+		<param name="planner" value="astar"/>
+		<param name="display" value="false"/>
+		<remap from="/nav_goal" to="/move_base_simple/goal"/>
+	</node>
+
+	<!-- Launch Maps and Rviz -->
+	<include file="$(find timemap_server)/launch/test.launch"/>	
+</launch>
