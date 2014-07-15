@@ -2,17 +2,14 @@
 #define NODE_H
 
 struct Point {
+	Point() : x(0), y(0), t(0){};
 	int x;
 	int y;
 	int t;
 };
 
-// struct Node {
-// 	Point pt;
-// 	int prev;
-// };
-
 struct Node {
+	Node() : dir('!'){};
 	Point pt;
 	Point prev;
 
