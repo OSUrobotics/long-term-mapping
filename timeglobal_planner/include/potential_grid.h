@@ -27,12 +27,21 @@
 class ComparePointsHeuristic {
 public:
 	ComparePointsHeuristic(Point new_goal){goal = new_goal;}
+	// Diagonal distance
+	// inline int heuristic(const Point& cur){
+	// 	int dx = abs(cur.x - goal.x);
+	// 	int dy = abs(cur.y - goal.y);
 
+	// 	// Manhattan distance with the distance saved using diagonals subtracted off
+	// 	return NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * std::min(dx, dy);
+	// }
+
+	// Manhattan distance
 	inline int heuristic(const Point& cur){
 		int dx = abs(cur.x - goal.x);
 		int dy = abs(cur.y - goal.y);
 
-		return NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * std::min(dx, dy);
+		return NORM_STEP * (dx + dy);
 	}
 
 	bool const operator()(const Point &lhs, const Point &rhs) {
@@ -96,6 +105,9 @@ namespace timeglobal_planner
 		//traces back the path and returns a ROS path
 		bool get_path(nav_msgs::Path &path, Point goal, const std::vector< Layer > &finished);
 
+		//smooths the path...
+		void smooth_path(nav_msgs::Path &path);
+
 		//fixes the header and publishes the path
 		void publish_path(nav_msgs::Path &path);
 
@@ -134,11 +146,13 @@ namespace timeglobal_planner
 
 		//The stuff below is mostly for debugging...
 
-		ros::Publisher test_pub_;
-		ros::Publisher test_pub2_;
+		ros::Publisher all_points_pub_;
+		ros::Publisher processed_points_pub_;
+		ros::Publisher best_points_pub_;
 
-		pcl::PointCloud<pcl::PointXYZ> pt_cloud_;
-		pcl::PointCloud<pcl::PointXYZ> pt_cloud2_;
+		pcl::PointCloud<pcl::PointXYZ> all_points_;
+		pcl::PointCloud<pcl::PointXYZ> processed_points_;
+		pcl::PointCloud<pcl::PointXYZ> best_points_;
 
 		double time_1, time_2, time_3, time_4, time_5, time_6, time_7;
 		int iter_1, iter_2, iter_3, iter_4, iter_5, iter_6, iter_7;

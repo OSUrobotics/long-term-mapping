@@ -13,11 +13,13 @@ namespace timeglobal_planner
 
 		if(display_){
 
-			test_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test", 1);
-			test_pub2_ = private_nh.advertise<sensor_msgs::PointCloud2>("/point_cloud_test2", 1);
+			all_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("all_points", 1);
+			processed_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("processed_points", 1);
+			best_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("best_points", 1);
 
-			pt_cloud_.header.frame_id = "map";
-			pt_cloud2_.header.frame_id = "map";
+			all_points_.header.frame_id = "map";
+			processed_points_.header.frame_id = "map";
+			best_points_.header.frame_id = "map";
 
 		}
 
@@ -90,8 +92,8 @@ namespace timeglobal_planner
 		ROS_DEBUG("Planning...\n");
 
 		if(display_){
-			pt_cloud_.clear();
-			pt_cloud2_.clear();
+			all_points_.clear();
+			processed_points_.clear();
 		}
 
 		start_     = start_pt;
@@ -110,8 +112,8 @@ namespace timeglobal_planner
 			if(cur == goal_){
 				ROS_DEBUG("Time Required: %lf\n", ros::Time::now().toSec() - full_time);
 				ROS_DEBUG("Retrieving path...");
-				return false;
-				// return get_path(path, cur, finished);
+				// return false;
+				return get_path(path, cur, finished);
 			}
 
 			//adds the neighbors of the current point using the JPS algorithm
@@ -123,9 +125,9 @@ namespace timeglobal_planner
 				mapToWorld(cur.x, cur.y, pt.x, pt.y);
 				pt.z    = (0.01) * cur.t;;
 
-				pt_cloud2_.push_back(pt);
+				processed_points_.push_back(pt);
 				
-				test_pub2_.publish(pt_cloud2_);
+				processed_points_pub_.publish(processed_points_);
 			}
 
 			//mark point as completed
@@ -141,10 +143,6 @@ namespace timeglobal_planner
 		return map.tmap.back().end;
 	}
 
-	// times:
-	// 2.097859 - (-4.985855, 2.975908)
-	// 1.317784 - (-4.016930, 3.020894)
-	// 3.556497 - ( 0.983357, 3.031751)
 	inline void PotentialGrid::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< Layer > &finished, std::vector<Point> &pqueue, Point cur){
 		//add forward position at next time
 		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
@@ -196,9 +194,9 @@ namespace timeglobal_planner
 			mapToWorld(point.x, point.y, pt.x, pt.y);
 			pt.z    = (0.01) * point.t;
 
-			pt_cloud_.push_back(pt);
+			all_points_.push_back(pt);
 			
-			test_pub_.publish(pt_cloud_);
+			all_points_pub_.publish(all_points_);
 		}
 	}
 
@@ -361,138 +359,38 @@ namespace timeglobal_planner
 		Point min_pt;
 		int min_time = cur.t;
 
-		//forward
-		temp.x = cur.x;
-		temp.y = cur.y + 1; 
-		temp.t = cur.t - NORM_STEP;
+		for(int dx = -1; dx <= 1; dx++){
+			for(int dy = -1; dy <=1; dy++){
+				temp.x = cur.x + dx;
+				temp.y = cur.y + dy;
 
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
+				// diagonal
+				if(dx != 0 && dy != 0){
+					continue;
+					// temp.t = cur.t - DIAG_STEP;
+				}
+				// down
+				else if(dx == 0 && dy == 0){
+					continue;
+					//temp.t = cur.t - TIME_STEP;
+				}
+				// cardinal direction
+				else{
+					temp.t = cur.t - NORM_STEP;
+				}
 
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
+				// check if neighbor exists
+				if(finished_point(finished, temp)){
 
-		//backward
-		temp.x = cur.x;
-		temp.y = cur.y - 1; 
-		temp.t = cur.t - NORM_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//right
-		temp.x = cur.x + 1;
-		temp.y = cur.y; 
-		temp.t = cur.t - NORM_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//left
-		temp.x = cur.x - 1;
-		temp.y = cur.y; 
-		temp.t = cur.t - NORM_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//forward left
-		temp.x = cur.x - 1;
-		temp.y = cur.y + 1; 
-		temp.t = cur.t - DIAG_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//forward right
-		temp.x = cur.x + 1;
-		temp.y = cur.y + 1; 
-		temp.t = cur.t - DIAG_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//backward left
-		temp.x = cur.x - 1;
-		temp.y = cur.y - 1; 
-		temp.t = cur.t - DIAG_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//backward right
-		temp.x = cur.x + 1;
-		temp.y = cur.y - 1; 
-		temp.t = cur.t - DIAG_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
-			}
-		}
-
-		//down
-		temp.x = cur.x;
-		temp.y = cur.y; 
-		temp.t = cur.t - TIME_STEP;
-
-		if(finished_point(finished, temp)){
-			if(temp.t < min_time){
-				min_time = temp.t;
-
-				min_pt.x = temp.x;
-				min_pt.y = temp.y;
-				min_pt.t = temp.t;
+					// update min if necessary
+					if(temp.t < min_time){
+						min_time = temp.t;
+		
+						min_pt.x = temp.x;
+						min_pt.y = temp.y;
+						min_pt.t = temp.t;
+					}
+				}
 			}
 		}
 
@@ -526,6 +424,47 @@ namespace timeglobal_planner
 		return !path.poses.empty();
 	}
 
+	void PotentialGrid::smooth_path(nav_msgs::Path &path){
+		nav_msgs::Path new_path;
+		new_path.poses.resize(path.poses.size());
+		geometry_msgs::Point temp;
+
+		for(int i = 0; i < path.poses.size(); i++){
+			new_path.poses[i].pose.position.x = path.poses[i].pose.position.x;
+			new_path.poses[i].pose.position.y = path.poses[i].pose.position.y;
+			new_path.poses[i].pose.position.z = path.poses[i].pose.position.z;
+		}
+
+		// iterates until it converges to within a tolerance
+		for(double change = 1; change >= SMOOTH_TOL;){
+			change = 0;
+			for(int i = 1; i < path.poses.size() - 1; i++){
+				temp = new_path.poses[i].pose.position;
+
+				// pulls back toward original point
+				new_path.poses[i].pose.position.x += DATA_WEIGHT * (path.poses[i].pose.position.x - new_path.poses[i].pose.position.x);
+				// pulls toward neighbors
+				new_path.poses[i].pose.position.x += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.x + new_path.poses[i + 1].pose.position.x - 2.0 * new_path.poses[i].pose.position.x);
+				// records difference
+				change += abs(temp.x - new_path.poses[i].pose.position.x);
+
+				new_path.poses[i].pose.position.y += DATA_WEIGHT * (path.poses[i].pose.position.y - new_path.poses[i].pose.position.y);
+				new_path.poses[i].pose.position.y += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.y + new_path.poses[i + 1].pose.position.y - 2.0 * new_path.poses[i].pose.position.y);
+				change += abs(temp.y - new_path.poses[i].pose.position.y);
+
+				new_path.poses[i].pose.position.z += DATA_WEIGHT * (path.poses[i].pose.position.z - new_path.poses[i].pose.position.z);
+				new_path.poses[i].pose.position.z += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.z + new_path.poses[i + 1].pose.position.z - 2.0 * new_path.poses[i].pose.position.z);
+				change += abs(temp.z - new_path.poses[i].pose.position.z);
+			}
+		}
+
+		for(int i = 0; i < path.poses.size(); i++){
+			path.poses[i].pose.position.x = new_path.poses[i].pose.position.x;
+			path.poses[i].pose.position.y = new_path.poses[i].pose.position.y;
+			path.poses[i].pose.position.z = new_path.poses[i].pose.position.z;
+		}
+	}
+	
 	void PotentialGrid::publish_path(nav_msgs::Path &path){
 		path.header.frame_id = path.poses[0].header.frame_id;
 		path.header.stamp    = path.poses[0].header.stamp;
