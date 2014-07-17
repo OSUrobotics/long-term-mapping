@@ -3,17 +3,16 @@
 #include "../include/kd_tree.h"
 
 
-
 int main(int argc, char** argv){
 	std::string planner;
 
 	ros::init(argc, argv, "timeglobal_planner");
-	
+
 	//Show debug output
 	if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
 	   ros::console::notifyLoggerLevelsChanged();
 	}
-
+	
 	ros::param::param<std::string>("/timeglobal_planner/planner", planner, "astar");
 
 	if(planner == "astar"){
@@ -25,7 +24,6 @@ int main(int argc, char** argv){
 		timeglobal_planner::PotentialGrid p;		
 	}
 
-	ros::spin();
 
 	return 0;
 }
