@@ -28,13 +28,22 @@
 class CompareNodesHeuristic {
 public:
 	CompareNodesHeuristic(Node new_goal){goal = new_goal;}
-
+	// Diagonal distance
 	inline int heuristic(const Node& cur){
 		int dx = abs(cur.pt.x - goal.pt.x);
 		int dy = abs(cur.pt.y - goal.pt.y);
 
-		return NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * std::min(dx, dy);
+	 // Manhattan distance with the distance saved using diagonals subtracted off
+		return 3 * (NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * std::min(dx, dy));
 	}
+
+	// Manhattan Distance
+	// inline int heuristic(const Node& cur){
+	// 	int dx = abs(cur.pt.x - goal.pt.x);
+	// 	int dy = abs(cur.pt.y - goal.pt.y);
+
+	// 	return 3 * (NORM_STEP * (dx + dy));
+	// }
 
 	bool const operator()(const Node &lhs, const Node &rhs) {
 		return (lhs.pt.t + heuristic(lhs) > rhs.pt.t + heuristic(rhs));
@@ -96,6 +105,9 @@ namespace timeglobal_planner
 
 		//traces back the path and returns a ROS path
 		bool get_path(nav_msgs::Path &path, Node goal, const std::vector< std::deque< std::deque< Node > > > &finished);
+
+		//applies a path smoothing algorithm...
+		void smooth_path(nav_msgs::Path &path);
 
 		//fixes the header and publishes the path
 		void publish_path(nav_msgs::Path &path);
