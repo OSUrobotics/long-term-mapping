@@ -3,15 +3,18 @@
 
 #include "node.h"
 
+#include <nav_msgs/Path.h>
+
+#include <stdio.h>
 #include <vector>
 #include <cmath>
 
-#define DIM 3
+#define DIM 2
 
 struct KDNode {
 	KDNode() : left(0), right(0), rtt_parent(0){};
 
-	int val[DIM];
+	float val[DIM];
 
 	KDNode* left;
 	KDNode* right;
@@ -20,7 +23,7 @@ struct KDNode {
 
 class KDTree {
 public:
-	KDTree(std::vector<KDNode> points);
+	KDTree(Point root);
 
 	void insert(KDNode* new_node);
 
@@ -29,6 +32,8 @@ public:
 	KDNode* find_nearest(KDNode target);
 
 	int get_size(){return size;};
+
+	bool get_display(nav_msgs::Path &path);
 
 private:
 	KDNode* root;
@@ -41,7 +46,7 @@ private:
 
 	double distance(const KDNode &first, const KDNode &second);
 
-
+	bool get_display(KDNode* parent, nav_msgs::Path &path);
 };
 
 #endif
