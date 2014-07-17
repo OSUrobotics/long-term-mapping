@@ -6,7 +6,7 @@ free_thresh: 0.196
 images: 
  - file:  closed.pgm
    begin: 0
-   end:   150
+   end:   350
  - file:  open.pgm
-   begin: 150
+   begin: 350
    end:   3000
