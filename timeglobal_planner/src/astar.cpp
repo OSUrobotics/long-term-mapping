@@ -67,10 +67,8 @@ namespace timeglobal_planner
 		if(!worldToMap(goal.pose.position.x, goal.pose.position.y, goal_pt.x, goal_pt.y)){
 			ROS_WARN("Goal point outside of known data, navigation will fail");
 		}
-		
-		goal_pt.t  = 1000;
 
-		ROS_DEBUG("Received goal at (%f, %f) for time %d\n", goal.pose.position.x, goal.pose.position.y, goal_pt.t);
+		ROS_DEBUG("Received goal at (%f, %f)", goal.pose.position.x, goal.pose.position.y);
 
 		if(plan(map_, path, start_pt, goal_pt)){
 			publish_path(path);
@@ -131,7 +129,6 @@ namespace timeglobal_planner
 				processed_points_pub_.publish(processed_points_);
 
 				for(int i=std::min(5, int(pqueue.size() - 1)); i >= 0; i--){
-					ROS_DEBUG("i: %d", i);
 					mapToWorld(pqueue[i].pt.x, pqueue[i].pt.y, pt.x, pt.y);
 					pt.z = (0.01) * pqueue[i].pt.t;
 
@@ -551,7 +548,50 @@ namespace timeglobal_planner
 			cur = get_prev(finished, cur);
 		}
 
+		smooth_path(path);
+
 		return !path.poses.empty();
+	}
+
+	void AStar::smooth_path(nav_msgs::Path &path){
+		nav_msgs::Path new_path;
+		new_path.poses.resize(path.poses.size());
+		geometry_msgs::Point temp;
+
+		for(int i = 0; i < path.poses.size(); i++){
+			new_path.poses[i].pose.position.x = path.poses[i].pose.position.x;
+			new_path.poses[i].pose.position.y = path.poses[i].pose.position.y;
+			new_path.poses[i].pose.position.z = path.poses[i].pose.position.z;
+		}
+
+		// iterates until it converges to within a tolerance
+		for(double change = 1; change >= SMOOTH_TOL;){
+			change = 0;
+			for(int i = 1; i < path.poses.size() - 1; i++){
+				temp = new_path.poses[i].pose.position;
+
+				// pulls back toward original point
+				new_path.poses[i].pose.position.x += DATA_WEIGHT * (path.poses[i].pose.position.x - new_path.poses[i].pose.position.x);
+				// pulls toward neighbors
+				new_path.poses[i].pose.position.x += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.x + new_path.poses[i + 1].pose.position.x - 2.0 * new_path.poses[i].pose.position.x);
+				// records difference
+				change += abs(temp.x - new_path.poses[i].pose.position.x);
+
+				new_path.poses[i].pose.position.y += DATA_WEIGHT * (path.poses[i].pose.position.y - new_path.poses[i].pose.position.y);
+				new_path.poses[i].pose.position.y += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.y + new_path.poses[i + 1].pose.position.y - 2.0 * new_path.poses[i].pose.position.y);
+				change += abs(temp.y - new_path.poses[i].pose.position.y);
+
+				new_path.poses[i].pose.position.z += DATA_WEIGHT * (path.poses[i].pose.position.z - new_path.poses[i].pose.position.z);
+				new_path.poses[i].pose.position.z += SMOOTH_WEIGHT * (new_path.poses[i - 1].pose.position.z + new_path.poses[i + 1].pose.position.z - 2.0 * new_path.poses[i].pose.position.z);
+				change += abs(temp.z - new_path.poses[i].pose.position.z);
+			}
+		}
+
+		for(int i = 0; i < path.poses.size(); i++){
+			path.poses[i].pose.position.x = new_path.poses[i].pose.position.x;
+			path.poses[i].pose.position.y = new_path.poses[i].pose.position.y;
+			path.poses[i].pose.position.z = new_path.poses[i].pose.position.z;
+		}
 	}
 
 	void AStar::publish_path(nav_msgs::Path &path){
