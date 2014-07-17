@@ -3,6 +3,7 @@
 namespace timeglobal_planner
 {
 	AStar::AStar(){
+		ROS_DEBUG("Initializing planner...");
 		ros::NodeHandle private_nh("~");
 
 		map_sub_ = private_nh.subscribe("/time_map", 1, &timeglobal_planner::AStar::timemap_callback, this);
