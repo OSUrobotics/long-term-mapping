@@ -47,6 +47,8 @@
   <build_depend>timemap_server</build_depend>
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>pcl_ros</build_depend>
+  <build_depend>nav_core</build_depend>
+  <run_depend>nav_core</run_depend>
   <run_depend>pcl_ros</run_depend>
   <run_depend>libpcl-all</run_depend>
   <run_depend>nav_msgs</run_depend>
@@ -60,6 +62,7 @@
   <export>
     <!-- You can specify that this package is a metapackage here: -->
     <!-- <metapackage/> -->
+    <nav_core plugin="${prefix}/astar_planner_plugin.xml" />
 
     <!-- Other tools can request additional information be placed here -->
 

@@ -114,6 +114,8 @@ include_directories(include
 #  ${catkin_LIBRARIES}
 # )
 
+add_library(astar_planner_lib src/astar_plugin.cpp)
+
 add_library(potential_grid
  src/potential_grid.cpp
 )
