@@ -1,0 +1,98 @@
+define block model
+(
+  size [0.5 0.5 0.5]
+  gui_nose 0
+)
+
+define topurg ranger
+(
+	sensor( 			
+    range [ 0.0  30.0 ]
+    fov 270.25
+   samples 1081
+  )
+
+  # generic model properties
+  color "black"
+  size [ 0.05 0.05 0.1 ]
+)
+
+define door position
+(
+  color_rgba [.545 .27 .075 1]
+  size [1.0 0.1 0.5]
+  origin [-0.5 0 0 0]
+  gui_nose 1
+  drive "diff"
+  #topurg(pose [ 0.050 0.000 0 0.000 ])
+)
+
+define person position
+(
+  size [0.50 0.50 0.50]
+  gui_nose 1
+  drive "omni"
+)
+
+define erratic position
+(
+  #size [0.415 0.392 0.25]
+  size [0.35 0.35 0.25]
+  origin [-0.05 0 0 0]
+  gui_nose 1
+  drive "diff"
+  topurg(pose [ 0.050 0.000 0 0.000 ])
+)
+
+define floorplan model
+(
+  color "gray30"
+
+  # most maps will need a bounding box
+  boundary 0
+
+  gui_nose 0
+  gui_grid 0
+
+  gui_outline 0
+  gripper_return 0
+  fiducial_return 0
+  laser_return 1
+)
+
+# set the resolution of the underlying raytrace model in meters
+interval_sim 100  # simulation timestep in milliseconds
+
+
+window
+( 
+  size [ 745.000 448.000 ] 
+
+  rotate [ 0.000 -1.560 ]
+  scale 28.806 
+)
+
+# load an environment bitmap
+floorplan
+( 
+  name "test building"
+  bitmap "test_building.png"
+  size [21.0 30.0 0.5]
+  pose [ 0 0 0 90.000 ]
+)
+
+# throw in a robot
+door( pose [ -12.25 -1.25 0 0   ] name "door_0" )
+door( pose [ -10.1  -6.25 0 0   ] name "door_1" )
+door( pose [ -8.69  -8.85 0 270 ] name "door_2" )
+door( pose [ -6.6   -1.25 0 0   ] name "door_3" )
+door( pose [ -3.14  3     0 0   ] name "door_4" )
+door( pose [ -3     -8.85 0 270 ] name "door_5" )
+door( pose [ 0      -6.25 0 0   ] name "door_6" )
+door( pose [ 0      6.85  0 0   ] name "door_7" )
+door( pose [ 0.15   -1.25 0 0   ] name "door_8" )
+door( pose [ 1.25   0.35  0 270 ] name "door_9" )
+door( pose [ 4.5    -4    0 270 ] name "door_10")
+door( pose [ 8.13   6.25  0 0   ] name "door_11")
+door( pose [ 10.75  -0.5  0 270 ] name "door_12")
+person( pose [0 0 0 0] name "person_0")
