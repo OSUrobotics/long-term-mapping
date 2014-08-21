@@ -5,8 +5,16 @@ occupied_thresh: 0.65
 free_thresh: 0.196
 images: 
  - file:  closed.pgm
-   begin: 0
-   end:   350
+   begin:
+      sec: 0
+      nsec: 0
+   end:
+      sec: 350
+      nsec: 0
  - file:  open.pgm
-   begin: 350
-   end:   3000
+   begin:
+      sec: 350
+      nsec: 0
+   end:
+      sec: 3000
+      nsec: 0
