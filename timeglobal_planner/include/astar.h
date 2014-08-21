@@ -54,6 +54,23 @@ private:
 
 };
 
+class CellData{
+public:
+	CellData(double d, double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) :
+	distance_(d), index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy)
+	{
+	}
+	double distance_;
+	unsigned int index_;
+	unsigned int x_, y_;
+	unsigned int src_x_, src_y_;
+};
+
+inline bool operator<(const CellData &a, const CellData &b)
+{
+	return a.distance_ > b.distance_;
+}
+
 namespace timeglobal_planner
 {
 	class AStar {
@@ -72,8 +89,16 @@ namespace timeglobal_planner
 		bool plan(const timemap_server::TimeLapseMap &map, nav_msgs::Path &path, Point start_pt, Point goal_pt);
 
 	private:
+		void inflate_map(timemap_server::TimeLapseMap &map);
+
+		inline bool enqueue(unsigned char* grid, bool* seen, unsigned int index, std::priority_queue<CellData> &inflation_queue, unsigned int mx, unsigned int my, unsigned int src_x, unsigned int src_y);
+
+		double computeDistance(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
+
+		unsigned char computeCost(double distance);
+
 		//gets the last time described by the current map set
-		inline int get_endtime(const timemap_server::TimeLapseMap &map);
+		inline double get_endtime(const timemap_server::TimeLapseMap &map);
 
 		//will update dists as neighbors are added. neighbors that are added will have prev set to cur
 		//note: neighbors are in time levels below cur based on the values of their respective movement
@@ -134,6 +159,7 @@ namespace timeglobal_planner
 		Node goal_;
 
 		double resolution_;
+		double time_res_;
 
 		double origin_x_;
 		double origin_y_;
@@ -141,18 +167,24 @@ namespace timeglobal_planner
 		int size_x_;
 		int size_y_;
 
-		int end_time_;
+		double cell_inflation_radius_;
+		double cell_inflation_radius_m_;
+
+		double start_time_;
+		double end_time_;
 
 		bool display_;
+		int display_freq_;
 
 		//The stuff below is mostly for debugging...
 		ros::Publisher all_points_pub_;
 		ros::Publisher processed_points_pub_;
 		ros::Publisher best_points_pub_;
+		ros::Publisher inflation_pub_;
 
-		pcl::PointCloud<pcl::PointXYZ> all_points_;
 		pcl::PointCloud<pcl::PointXYZ> processed_points_;
 		pcl::PointCloud<pcl::PointXYZ> best_points_;
+		pcl::PointCloud<pcl::PointXYZ> inflation_;
 
 		double time_1, time_2, time_3, time_4, time_5, time_6, time_7;
 		int iter_1, iter_2, iter_3, iter_4, iter_5, iter_6, iter_7;
