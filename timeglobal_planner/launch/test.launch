@@ -3,6 +3,7 @@
 	<node name="planner" type="planner_node" pkg="timeglobal_planner" output="screen">
 		<param name="planner" value="astar"/>
 		<param name="display" value="false"/>
+		<param name="cell_inflation_radius" value=".15"/>
 		<remap from="/nav_goal" to="/move_base_simple/goal"/>
 	</node>
 
