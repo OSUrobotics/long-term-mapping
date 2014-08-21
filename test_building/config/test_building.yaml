@@ -1,0 +1,211 @@
+doors:
+  - !!python/object:__main__.Door
+    topic: /robot_0
+    start_pos: [-12.25, -1.25, 0]
+    open_pos: [-12.25, -1.25, -90]
+    closed_pos: [-12.25, -1.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_1
+    start_pos: [-10.1, -6.25, 0]
+    open_pos: [-10.1, -6.25, -90]
+    closed_pos: [-10.1, -6.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_2
+    start_pos: [-8.69, -8.85, -90]
+    open_pos: [-8.69, -8.85, 0]
+    closed_pos: [-8.69, -8.85, -90]
+  - !!python/object:__main__.Door
+    topic: /robot_3
+    start_pos: [-6.6, -1.25, 0]
+    open_pos: [-6.6, -1.25, -90]
+    closed_pos: [-6.6, -1.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_4
+    start_pos: [-3.14, 3, 0]
+    open_pos: [-3.14, 3, -90]
+    closed_pos: [-3.14, 3, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_5
+    start_pos: [-3, -8.85, -90]
+    open_pos: [-3, -8.85, 0]
+    closed_pos: [-3, -8.85, -90]
+  - !!python/object:__main__.Door
+    topic: /robot_6
+    start_pos: [0, -6.25, 0]
+    open_pos: [0, -6.25, -90]
+    closed_pos: [0, -6.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_7
+    start_pos: [0, 6.85, 0]
+    open_pos: [0, 6.85, -90]
+    closed_pos: [0, 6.85, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_8
+    start_pos: [0.15, -1.25, 0]
+    open_pos: [0.15, -1.25, -90]
+    closed_pos: [0.15, -1.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_9
+    start_pos: [1.25, 0.35, -90]
+    open_pos: [1.25, 0.35, 0]
+    closed_pos: [1.25, 0.35, -90]
+  - !!python/object:__main__.Door
+    topic: /robot_10
+    start_pos: [4.5, -4, -90]
+    open_pos: [4.5, -4, 0]
+    closed_pos: [4.5, -4, -90]
+  - !!python/object:__main__.Door
+    topic: /robot_11
+    start_pos: [8.13, 6.25, 0]
+    open_pos: [8.13, 6.25, -90]
+    closed_pos: [8.13, 6.25, 0]
+  - !!python/object:__main__.Door
+    topic: /robot_12
+    start_pos: [10.75, -0.5, -90]
+    open_pos: [10.75, -0.5, 0]
+    closed_pos: [10.75, -0.5, -90]
+people:
+  # This only explores open areas
+  # - !!python/object:__main__.Person
+  #   topic: /robot_13
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [-13, 0, 0]
+  #     - [-8, 0, 0]
+  #     - [-12, 8.5, 0]
+  #     - [-3.5, 8.5, 0]
+  #     - [-3.5, 4, 0]
+  #     - [-3.5, 8.5, 0]
+  #     - [2.8, 8.5, 0]
+  #     - [2.8, 1, 0]
+  #     - [2.8, 4.5, 0]
+  #     - [12.8, 4.5, 0]
+  #     - [12.8, 8.5, 0]
+  #     - [12.8, -8, 0]
+  #     - [3, -8, 0]
+  #     - [3, -3.5, 0]
+  #     - [-12.5, -3.5, 0]
+  - !!python/object:__main__.Person
+    topic: /robot_13
+    start_waypoint: 0
+    waypoints:
+      - [-13, 0, 0]
+      - [-8, 0, 0]
+      - [-12, 8.5, 0]
+      - [-3.6, 8.5, 0]
+      - [-3.6, 4, 0]
+      - [-3.6, 0, 0]
+      - [-3.6, 4, 0]
+      - [-3.6, 8.5, 0]
+      - [-0.32, 8.5, 0]
+      - [-0.32, 4.5, 0]
+      - [-0.32, 8.5, 0]
+      - [2.8, 8.5, 0]
+      - [2.8, 1, 0]
+      - [0, 1, 0]
+      - [2.8, 1, 0]
+      - [2.8, 4.5, 0]
+      - [7.6, 4.5, 0]
+      - [7.6, 8.5, 0]
+      - [7.6, 4.5, 0]
+      - [12.8, 4.5, 0]
+      - [12.8, 8.5, 0]
+      - [12.8, 0, 0]
+      - [7, 0, 0]
+      - [12.8, 0, 0]
+      - [12.8, -8, 0]
+      - [3, -8, 0]
+      - [3, -3.5, 0]
+      - [9, -3.5, 0]
+      - [-0.25, -3.5, 0]
+      - [-0.25, 1, 0]
+      - [-0.25, -3.5, 0]
+      - [-0.5, -3.5, 0]
+      - [-0.5, -8.25, 0]
+      - [-5.75, -8.25, 0]
+      - [-0.5, -8.25, 0]
+      - [-0.5, -3.5, 0]
+      - [-10.6, -3.5, 0]
+      - [-10.6, -8.35, 0]
+      - [-5.75, -8.35, 0]
+      - [-10.6, -8.25, 0]
+      - [-10.6, -3.5, 0]
+      - [-12.65, -3.5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_14
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [6, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -2, 0]
+  #     - [-10, -2, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_15
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [7.5, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -3.5, 0]
+  #     - [-10, -3.5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_16
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [9, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -5, 0]
+  #     - [-10, -5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_17
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [6, -5, 0]
+  #     - [6, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -2, 0]
+  #     - [-8.5, -2, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_18
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [7.5, -5, 0]
+  #     - [7.5, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -3.5, 0]
+  #     - [-8.5, -3.5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_19
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [9, -5, 0]
+  #     - [9, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -5, 0]
+  #     - [-8.5, -5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_20
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [6, -2, 0]
+  #     - [6, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -2, 0]
+  #     - [-7, -2, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_21
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [7.5, -2, 0]
+  #     - [7.5, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -3.5, 0]
+  #     - [-7, -3.5, 0]
+  # - !!python/object:__main__.Person
+  #   topic: /robot_22
+  #   start_waypoint: 0
+  #   waypoints:
+  #     - [9, -2, 0]
+  #     - [9, -3.5, 0]
+  #     - [3, -3.5, 0]
+  #     - [2, -5, 0]
+  #     - [-7, -5, 0]

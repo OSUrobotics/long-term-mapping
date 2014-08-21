@@ -1,0 +1,34 @@
+resolution: 0.050000
+origin: [-100.000000, -100.000000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+images: 
+ - file:  random_map_1.pgm
+   begin: 
+      sec: 0
+      nsec: 0
+   end:
+      sec: 20
+      nsec: 0
+ - file:  random_map_2.pgm
+   begin: 
+      sec: 20
+      nsec: 0
+   end:
+      sec: 40
+      nsec: 0
+ - file:  random_map_3.pgm
+   begin:
+      sec: 40
+      nsec: 0
+   end:
+      sec: 60
+      nsec: 0
+ - file:  random_map_4.pgm
+   begin:
+      sec: 60
+      nsec: 0
+   end:
+      sec: 80
+      nsec: 0
