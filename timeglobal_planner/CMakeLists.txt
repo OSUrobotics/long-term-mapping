@@ -114,27 +114,27 @@ include_directories(include
 #  ${catkin_LIBRARIES}
 # )
 
-add_library(astar_planner_lib src/astar_plugin.cpp)
+# add_library(astar_planner_lib src/astar_plugin.cpp)
 
-add_library(potential_grid
- src/potential_grid.cpp
-)
-add_dependencies(potential_grid potential_grid_gencfg)
-add_dependencies(potential_grid potential_grid_gencpp)
+# add_library(potential_grid
+#  src/potential_grid.cpp
+# )
+# add_dependencies(potential_grid potential_grid_gencfg)
+# add_dependencies(potential_grid potential_grid_gencpp)
 
-target_link_libraries(potential_grid
- ${catkin_LIBRARIES}
-)
+# target_link_libraries(potential_grid
+#  ${catkin_LIBRARIES}
+# )
 
-add_library(kd_tree
- src/kd_tree.cpp
-)
-add_dependencies(kd_tree kd_tree_gencfg)
-add_dependencies(kd_tree kd_tree_gencpp)
+# add_library(kd_tree
+#  src/kd_tree.cpp
+# )
+# add_dependencies(kd_tree kd_tree_gencfg)
+# add_dependencies(kd_tree kd_tree_gencpp)
 
-target_link_libraries(kd_tree
- ${catkin_LIBRARIES}
-)
+# target_link_libraries(kd_tree
+#  ${catkin_LIBRARIES}
+# )
 
 add_library(astar
  src/astar.cpp
@@ -154,7 +154,7 @@ add_executable(planner_node src/planner_node.cpp)
 # add_dependencies(planner_node timeglobal_planner_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(planner_node astar potential_grid kd_tree
+target_link_libraries(planner_node astar #potential_grid kd_tree
  ${catkin_LIBRARIES} 
 )
 
