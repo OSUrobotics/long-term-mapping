@@ -1,6 +1,6 @@
-#include "../include/potential_grid.h"
+// #include "../include/potential_grid.h"
 #include "../include/astar.h"
-#include "../include/kd_tree.h"
+// #include "../include/kd_tree.h"
 
 
 int main(int argc, char** argv){
@@ -21,7 +21,7 @@ int main(int argc, char** argv){
 	}
 	else if(planner == "potential_grid"){
 		ROS_DEBUG("Using Potential Grid");
-		timeglobal_planner::PotentialGrid p;		
+		// timeglobal_planner::PotentialGrid p;		
 	}
 
 
