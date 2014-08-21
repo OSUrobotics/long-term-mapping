@@ -32,6 +32,7 @@ catkin_package(
         include
     LIBRARIES
         image_loader
+        map_server_lib
     CATKIN_DEPENDS
         roscpp
         tf
@@ -43,8 +44,13 @@ include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
 add_library(image_loader src/image_loader.cpp)
 target_link_libraries(image_loader SDL SDL_image ${Boost_LIBRARIES})
 
+include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
+add_library(map_server_lib src/map_server.cpp)
+target_link_libraries(map_server_lib ${catkin_LIBRARIES})
+
 add_executable(map_server src/main.cpp)
 target_link_libraries(map_server
+    map_server_lib
     image_loader
     yaml-cpp
     ${catkin_LIBRARIES}
