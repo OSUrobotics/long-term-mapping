@@ -8,7 +8,7 @@ define topurg ranger
 (
 	sensor( 			
     range [ 0.0  30.0 ]
-    fov 270.25
+    fov 360.0
    samples 1081
   )
 
@@ -17,21 +17,36 @@ define topurg ranger
   size [ 0.05 0.05 0.1 ]
 )
 
+define doorranger ranger
+(
+  sensor(       
+    range [ 0.0  0.0 ]
+    fov 0
+   samples 0
+  )
+  color "black"
+  size [ 0.05 0.05 0.1 ]
+)
+
 define door position
 (
   color_rgba [.545 .27 .075 1]
-  size [1.0 0.1 0.5]
+  size [1.0 0.1 1.0]
   origin [-0.5 0 0 0]
   gui_nose 1
   drive "diff"
-  #topurg(pose [ 0.050 0.000 0 0.000 ])
+  localization "gps"
+  localization_origin [0 0 0 0]
+  doorranger(pose [ 0.050 0.000 0 0.750 ])
 )
 
 define person position
 (
   size [0.50 0.50 0.50]
+  origin [-0.05 0 0 0]
   gui_nose 1
   drive "omni"
+  topurg(pose [ 0.050 0.000 0 0.750 ])
 )
 
 define erratic position
@@ -41,6 +56,7 @@ define erratic position
   origin [-0.05 0 0 0]
   gui_nose 1
   drive "diff"
+  localization "gps"
   topurg(pose [ 0.050 0.000 0 0.000 ])
 )
 
@@ -77,22 +93,98 @@ floorplan
 ( 
   name "test building"
   bitmap "test_building.png"
-  size [21.0 30.0 0.5]
+  size [21.0 30.0 1.0]
   pose [ 0 0 0 90.000 ]
 )
 
-# throw in a robot
-door( pose [ -12.25 -1.25 0 0   ] name "door_0" )
-door( pose [ -10.1  -6.25 0 0   ] name "door_1" )
-door( pose [ -8.69  -8.85 0 270 ] name "door_2" )
-door( pose [ -6.6   -1.25 0 0   ] name "door_3" )
-door( pose [ -3.14  3     0 0   ] name "door_4" )
-door( pose [ -3     -8.85 0 270 ] name "door_5" )
-door( pose [ 0      -6.25 0 0   ] name "door_6" )
-door( pose [ 0      6.85  0 0   ] name "door_7" )
-door( pose [ 0.15   -1.25 0 0   ] name "door_8" )
-door( pose [ 1.25   0.35  0 270 ] name "door_9" )
-door( pose [ 4.5    -4    0 270 ] name "door_10")
-door( pose [ 8.13   6.25  0 0   ] name "door_11")
-door( pose [ 10.75  -0.5  0 270 ] name "door_12")
-person( pose [0 0 0 0] name "person_0")
+# closed
+# door(   pose [-12.25 -1.25 0 0  ] name "door_0"  )
+# door(   pose [-10.1  -6.25 0 0  ] name "door_1"  )
+# door(   pose [-8.69  -8.85 0 270] name "door_2"  )
+# door(   pose [-6.6   -1.25 0 0  ] name "door_3"  )
+# door(   pose [-3.14  3     0 0  ] name "door_4"  )
+# door(   pose [-3     -8.85 0 270] name "door_5"  )
+# door(   pose [0      -6.25 0 0  ] name "door_6"  )
+# door(   pose [0      6.85  0 0  ] name "door_7"  )
+# door(   pose [0.15   -1.25 0 0  ] name "door_8"  )
+# door(   pose [1.25   0.35  0 270] name "door_9"  )
+# door(   pose [4.5    -4    0 270] name "door_10" )
+# door(   pose [8.13   6.25  0 0  ] name "door_11" )
+# door(   pose [10.75  -0.5  0 270] name "door_12" )
+
+# random 1
+# door(   pose [-12.25 -1.25 0 270  ] name "door_0"  )
+# door(   pose [-10.1  -6.25 0 0  ] name "door_1"  )
+# door(   pose [-8.69  -8.85 0 0] name "door_2"  )
+# door(   pose [-6.6   -1.25 0 270  ] name "door_3"  )
+# door(   pose [-3.14  3     0 270  ] name "door_4"  )
+# door(   pose [-3     -8.85 0 270] name "door_5"  )
+# door(   pose [0      -6.25 0 0  ] name "door_6"  )
+# door(   pose [0      6.85  0 0  ] name "door_7"  )
+# door(   pose [0.15   -1.25 0 0  ] name "door_8"  )
+# door(   pose [1.25   0.35  0 0] name "door_9"  )
+# door(   pose [4.5    -4    0 270] name "door_10" )
+# door(   pose [8.13   6.25  0 270  ] name "door_11" )
+# door(   pose [10.75  -0.5  0 0] name "door_12" )
+
+# random 2
+#door(   pose [-12.25 -1.25 0 0  ] name "door_0"  )
+#door(   pose [-10.1  -6.25 0 270  ] name "door_1"  )
+#door(   pose [-8.69  -8.85 0 0] name "door_2"  )
+#door(   pose [-6.6   -1.25 0 0  ] name "door_3"  )
+#door(   pose [-3.14  3     0 270  ] name "door_4"  )
+#door(   pose [-3     -8.85 0 270] name "door_5"  )
+#door(   pose [0      -6.25 0 0  ] name "door_6"  )
+#door(   pose [0      6.85  0 270  ] name "door_7"  )
+#door(   pose [0.15   -1.25 0 0  ] name "door_8"  )
+#door(   pose [1.25   0.35  0 270] name "door_9"  )
+#door(   pose [4.5    -4    0 270] name "door_10" )
+#door(   pose [8.13   6.25  0 270  ] name "door_11" )
+#door(   pose [10.75  -0.5  0 0] name "door_12" )
+
+# random 3
+#door(   pose [-12.25 -1.25 0 270  ] name "door_0"  )
+#door(   pose [-10.1  -6.25 0 0  ] name "door_1"  )
+#door(   pose [-8.69  -8.85 0 0] name "door_2"  )
+#door(   pose [-6.6   -1.25 0 270  ] name "door_3"  )
+#door(   pose [-3.14  3     0 0  ] name "door_4"  )
+#door(   pose [-3     -8.85 0 270] name "door_5"  )
+#door(   pose [0      -6.25 0 0  ] name "door_6"  )
+#door(   pose [0      6.85  0 0  ] name "door_7"  )
+#door(   pose [0.15   -1.25 0 270  ] name "door_8"  )
+#door(   pose [1.25   0.35  0 270] name "door_9"  )
+#door(   pose [4.5    -4    0 0] name "door_10" )
+#door(   pose [8.13   6.25  0 0  ] name "door_11" )
+#door(   pose [10.75  -0.5  0 0] name "door_12" )
+
+# random 4
+#door(   pose [-12.25 -1.25 0 0  ] name "door_0"  )
+#door(   pose [-10.1  -6.25 0 0  ] name "door_1"  )
+#door(   pose [-8.69  -8.85 0 0] name "door_2"  )
+#door(   pose [-6.6   -1.25 0 0  ] name "door_3"  )
+#door(   pose [-3.14  3     0 270  ] name "door_4"  )
+#door(   pose [-3     -8.85 0 270] name "door_5"  )
+#door(   pose [0      -6.25 0 0  ] name "door_6"  )
+#door(   pose [0      6.85  0 270  ] name "door_7"  )
+#door(   pose [0.15   -1.25 0 0  ] name "door_8"  )
+#door(   pose [1.25   0.35  0 270] name "door_9"  )
+#door(   pose [4.5    -4    0 0] name "door_10" )
+#door(   pose [8.13   6.25  0 0  ] name "door_11" )
+#door(   pose [10.75  -0.5  0 270] name "door_12" )
+
+# random 5
+door(   pose [-12.25 -1.25 0 270  ] name "door_0"  )
+door(   pose [-10.1  -6.25 0 270  ] name "door_1"  )
+door(   pose [-8.69  -8.85 0 0] name "door_2"  )
+door(   pose [-6.6   -1.25 0 270  ] name "door_3"  )
+door(   pose [-3.14  3     0 270  ] name "door_4"  )
+door(   pose [-3     -8.85 0 0] name "door_5"  )
+door(   pose [0      -6.25 0 270  ] name "door_6"  )
+door(   pose [0      6.85  0 0  ] name "door_7"  )
+door(   pose [0.15   -1.25 0 270  ] name "door_8"  )
+door(   pose [1.25   0.35  0 270] name "door_9"  )
+door(   pose [4.5    -4    0 0] name "door_10" )
+door(   pose [8.13   6.25  0 270  ] name "door_11" )
+door(   pose [10.75  -0.5  0 0] name "door_12" )
+
+person( pose [-13    0     0 0  ] name "person_0")
