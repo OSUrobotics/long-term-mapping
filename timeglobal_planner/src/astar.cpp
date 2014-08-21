@@ -7,22 +7,31 @@ namespace timeglobal_planner
 		ros::NodeHandle private_nh("~");
 
 		map_sub_ = private_nh.subscribe("/time_map", 1, &timeglobal_planner::AStar::timemap_callback, this);
-		goal_sub_ = private_nh.subscribe("/nav_goal", 1, &timeglobal_planner::AStar::goal_callback, this);
-		path_pub_ = private_nh.advertise<nav_msgs::Path>("/path", 1);
+		goal_sub_ = private_nh.subscribe("/planner/nav_goal", 1, &timeglobal_planner::AStar::goal_callback, this);
+		path_pub_ = private_nh.advertise<nav_msgs::Path>("/planner/path", 1);
+		inflation_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("/planner/inflation", 1);
+		inflation_.header.frame_id = "map";
 
 		private_nh.param<bool>("display", display_, false);
+		private_nh.param<int>("display_freq", display_freq_, 10);
+		// cell inflation radius is in meters
+		private_nh.param<double>("cell_inflation_radius", cell_inflation_radius_m_, 0.5);
 
 		if(display_){
-
-			all_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("all_points", 1);
+			ROS_DEBUG("display: true");
 			processed_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("processed_points", 1);
 			best_points_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("best_points", 1);
 
-			all_points_.header.frame_id = "map";
 			processed_points_.header.frame_id = "map";
 			best_points_.header.frame_id = "map";
+			ROS_DEBUG("display_freq: %d", display_freq_);
 
 		}
+		else{
+			ROS_DEBUG("display: false");
+		}
+
+		ROS_DEBUG("cell_inflation_radius: %f", cell_inflation_radius_m_);
 
 		ros::spin();
 	}
@@ -36,6 +45,7 @@ namespace timeglobal_planner
 		map_         = map;
 
 		resolution_  = map.tmap[0].map.info.resolution;
+		time_res_    = resolution_ / (ROBOT_SPEED * NORM_STEP);
 
 		origin_x_    = map.tmap[0].map.info.origin.position.x;
 		origin_y_    = map.tmap[0].map.info.origin.position.y;
@@ -43,13 +53,19 @@ namespace timeglobal_planner
 		size_x_      = map.tmap[0].map.info.width;
 		size_y_      = map.tmap[0].map.info.height;
 
-		end_time_    = get_endtime(map);
+		start_time_  = map.tmap[0].begin.toSec();
+		end_time_    = map.tmap.back().end.toSec();
 
+		cell_inflation_radius_ = cell_inflation_radius_m_ / resolution_;
+
+		inflate_map(map_);
 		
-		ROS_DEBUG("Received %lu maps of size %d X %d and duration %d\n", map.tmap.size(), size_x_, size_y_, end_time_);
+		ROS_DEBUG("Received %lu maps of size %d X %d and duration %f\n", map.tmap.size(), size_x_, size_y_, end_time_ - start_time_);
 
 		initialized_ = true;
 	}
+
+
 
 	void AStar::goal_callback(const geometry_msgs::PoseStamped& goal){			
 		if(!initialized_){
@@ -91,10 +107,10 @@ namespace timeglobal_planner
 		ROS_DEBUG("Planning...\n");
 
 		if(display_){
-			all_points_.clear();
 			processed_points_.clear();
-			
 		}
+
+		inflation_pub_.publish(inflation_);
 
 		start_.pt     = start_pt;
 		start_.prev.t = -1;
@@ -104,7 +120,8 @@ namespace timeglobal_planner
 
 		pqueue.push_back(start_);
 	
-		while(!pqueue.empty()){
+		int j = 0;
+		while(!pqueue.empty() && ros::ok()){
 			//get the node closest to start
 			cur = pqueue.front();
 			std::pop_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
@@ -112,6 +129,10 @@ namespace timeglobal_planner
 
 			//we found the shortest path to the goal!
 			if(cur == goal_){
+				if(display_){
+					processed_points_pub_.publish(processed_points_);
+				}
+
 				ROS_DEBUG("Time Required: %lf\n", ros::Time::now().toSec() - full_time);
 				ROS_DEBUG("Retrieving path...");
 				return get_path(path, cur, finished);
@@ -127,7 +148,11 @@ namespace timeglobal_planner
 				pt.z = (0.01) * cur.pt.t;
 
 				processed_points_.push_back(pt);
-				processed_points_pub_.publish(processed_points_);
+
+				if(!(++j % display_freq_)){
+					processed_points_pub_.publish(processed_points_);
+					j = 0;
+				}
 
 				for(int i=std::min(5, int(pqueue.size() - 1)); i >= 0; i--){
 					mapToWorld(pqueue[i].pt.x, pqueue[i].pt.y, pt.x, pt.y);
@@ -139,7 +164,8 @@ namespace timeglobal_planner
 				best_points_pub_.publish(best_points_);
 
 				best_points_.clear();
-			}
+
+			}			
 
 			//mark node as completed
 			add_finished(finished, cur);
@@ -149,9 +175,9 @@ namespace timeglobal_planner
 		return false;
 	}
 
-	inline int AStar::get_endtime(const timemap_server::TimeLapseMap &map){
+	inline double AStar::get_endtime(const timemap_server::TimeLapseMap &map){
 		//this comment makes sublime happy...
-		return map.tmap.back().end;
+		return map.tmap.back().end.toSec();
 	}
 
 	// times:
@@ -306,6 +332,144 @@ namespace timeglobal_planner
 	// 	}
 	// }
 
+		void AStar::inflate_map(timemap_server::TimeLapseMap &map){
+		std::priority_queue<CellData> inflation_queue;
+
+		bool* seen = new bool[size_x_ * size_y_];
+
+		unsigned int min_i = 0;
+		unsigned int min_j = 0;
+		unsigned int max_i = size_x_;
+		unsigned int max_j = size_y_;
+
+		for(unsigned int k = 0; k < map.tmap.size(); k++){
+			unsigned char* master_array = (unsigned char*)map.tmap[k].map.data.data();
+
+			memset(seen, false, size_x_ * size_y_ * sizeof(bool));
+
+			for (int j = min_j; j < max_j; j++)
+			{
+				for (int i = min_i; i < max_i; i++)
+				{
+					int index = size_y_ * j + i;
+					unsigned char cost = master_array[index];
+					if (cost == LETHAL_COST)
+					{
+						enqueue(master_array, seen, index, inflation_queue, i, j, i, j);
+					}
+				}
+			}
+
+			while (!inflation_queue.empty())
+			{	
+				//get the highest priority cell and pop it off the priority queue
+				const CellData& current_cell = inflation_queue.top();
+				unsigned int index = current_cell.index_;
+				unsigned int mx = current_cell.x_;
+				unsigned int my = current_cell.y_;
+				unsigned int sx = current_cell.src_x_;
+				unsigned int sy = current_cell.src_y_;
+				//pop once we have our cell info
+				inflation_queue.pop();
+				//attempt to put the neighbors of the current cell onto the queue
+				if (mx > 0){
+					if(enqueue(master_array, seen, index - 1, inflation_queue, mx - 1, my, sx, sy)){
+						pcl::PointXYZ pt;
+
+						mapToWorld(mx, my, pt.x, pt.y);
+						pt.z = (0.1) * (map.tmap[k].begin.toSec() - start_time_);
+
+						inflation_.push_back(pt);
+					}
+				}
+				if (my > 0){
+					if(enqueue(master_array, seen, index - size_x_, inflation_queue, mx, my - 1, sx, sy)){
+						pcl::PointXYZ pt;
+
+						mapToWorld(mx, my, pt.x, pt.y);
+						pt.z = (0.1) * (map.tmap[k].begin.toSec() - start_time_);
+
+						inflation_.push_back(pt);
+					}
+				}
+				if (mx < size_x_ - 1){
+					if(enqueue(master_array, seen, index + 1, inflation_queue, mx + 1, my, sx, sy)){
+						pcl::PointXYZ pt;
+
+						mapToWorld(mx, my, pt.x, pt.y);
+						pt.z = (0.1) * (map.tmap[k].begin.toSec() - start_time_);
+
+						inflation_.push_back(pt);
+					}
+				}
+				if (my < size_y_ - 1){
+					if(enqueue(master_array, seen, index + size_x_, inflation_queue, mx, my + 1, sx, sy)){
+						pcl::PointXYZ pt;
+
+						mapToWorld(mx, my, pt.x, pt.y);
+						pt.z = (0.1) * (map.tmap[k].begin.toSec() - start_time_);
+
+						inflation_.push_back(pt);
+					}
+				}
+			}	
+		}
+	}
+
+	inline bool AStar::enqueue(unsigned char* grid, bool* seen, unsigned int index, std::priority_queue<CellData> &inflation_queue, unsigned int mx, unsigned int my,
+		unsigned int src_x, unsigned int src_y)
+	{
+		//set the cost of the cell being inserted
+		if (!seen[index])
+		{
+			// ROS_DEBUG("inflating...");
+			//we compute our distance table one cell further than the inflation radius dictates so we can make the check below
+			double distance = computeDistance(mx, my, src_x, src_y);
+			//we only want to put the cell in the queue if it is within the inflation radius of the obstacle point
+			if (distance > cell_inflation_radius_)
+			{
+				return false;
+			}
+
+			//assign the cost associated with the distance from an obstacle to the cell
+			unsigned char cost = computeCost(distance);
+			unsigned char old_cost = grid[index];
+			
+			// ROS_DEBUG("updating cost");
+
+
+			if (old_cost == UNKNOWN_COST && cost >= LETHAL_COST)
+			{
+				grid[index] = cost;
+			}
+			else
+			{
+				grid[index] = std::max(old_cost, cost);
+			}
+
+			//push the cell data onto the queue and mark
+			seen[index] = true;
+			CellData data(distance, index, mx, my, src_x, src_y);
+			inflation_queue.push(data);
+			
+			return true;
+		}
+		return false;
+	}
+
+	double AStar::computeDistance(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1){
+		return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+	}
+
+	unsigned char AStar::computeCost(double distance){
+		if(distance <= cell_inflation_radius_){
+			return LETHAL_COST;
+		}
+		else{
+			return OPEN_COST;
+		}
+	}
+
 	inline void AStar::add_neighbor(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur, int dx, int dy, int dt, char dir){
 		Node new_node;
 
@@ -343,18 +507,6 @@ namespace timeglobal_planner
 
 		pqueue.push_back(node);
 		std::push_heap(pqueue.begin(), pqueue.end(), CompareNodesHeuristic(goal_));
-
-		if(display_){
-
-			pcl::PointXYZ pt;
-			
-			mapToWorld(node.pt.x, node.pt.y, pt.x, pt.y);
-			pt.z    = (0.01) * node.pt.t;
-
-			all_points_.push_back(pt);
-			
-			all_points_pub_.publish(all_points_);
-		}
 	}
 
 	inline bool AStar::valid(int val){
@@ -365,7 +517,7 @@ namespace timeglobal_planner
 	inline double AStar::get_occ(const timemap_server::TimeLapseMap &map, int x, int y, int t){
 		//find map that corresponds to the correct time
 		int i=0;
-		while(map.tmap[i].end < t){
+		while(map.tmap[i].end.toSec() < t * time_res_ + start_time_){
 			if(map.tmap.size() <= ++i){
 				//we do not have enough data to navigate to destination..
 				ROS_WARN("Insufficient map data. End time has been exceeded.");
@@ -538,7 +690,7 @@ namespace timeglobal_planner
 
 			mapToWorld(cur.pt.x, cur.pt.y, pose.pose.position.x, pose.pose.position.y);
 
-			pose.pose.position.z = (0.01) * cur.pt.t;
+			pose.pose.position.z = (0.1) * cur.pt.t * time_res_;
 			pose.pose.orientation.x = 0.0;
 			pose.pose.orientation.y = 0.0;
 			pose.pose.orientation.z = 0.0;
