@@ -20,7 +20,7 @@
 		<remap from="/map" to="/map_1"/>
 	</node>
 
-	<!-- <node name="map_server_2" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_2.yaml">
+	<node name="map_server_2" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_2.yaml">
 		<param name="frame_id" value="/map_2"/>
 		<remap from="/map" to="/map_2"/>
 	</node>
@@ -33,7 +33,7 @@
 	<node name="map_server_4" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_4.yaml">
 		<param name="frame_id" value="/map_4"/>
 		<remap from="/map" to="/map_4"/>
-	</node> -->
+	</node>
 
 	<!-- Launch Rviz -->
 	<node name="rviz" type="rviz" pkg="rviz" args="-d $(find test_building)/test_building.rviz"/>
