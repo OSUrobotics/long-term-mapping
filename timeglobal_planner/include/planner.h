@@ -1,10 +1,11 @@
 #ifndef PLANNER_H
 #define PLANNER_H
 
-#define ROBOT_SPEED   1.0
+// This seems to work for stage
+#define ROBOT_SPEED   0.62
 
 #define NORM_STEP     2
-#define DIAG_STEP     3
+#define DIAG_STEP     2.8284271247461903
 #define TIME_STEP     4
 
 #define LETHAL_COST   100
