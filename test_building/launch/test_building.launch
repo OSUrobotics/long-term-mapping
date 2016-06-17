@@ -9,27 +9,30 @@
 	</node>
 
 	<!-- Launch Maps for Planner -->
-	<node name="time_map_server" type="map_server" pkg="timemap_server" args="$(find test_building)/maps/test_building.yaml"/>
+	<node name="time_map_server" type="timemap_server" pkg="timemap_server" args="$(find test_building)/maps/test_building.yaml"/>
 
-	<!-- Launch Maps for Rviz -->
+	<!-- Launch Maps for Visualization -->
+	<node pkg="tf" type="static_transform_publisher" name="map2_broadcaster" args="0 0 2 0 0 0 1 map map_2 100" />
+	<node pkg="tf" type="static_transform_publisher" name="map3_broadcaster" args="0 0 4 0 0 0 1 map map_3 100" />
+	<node pkg="tf" type="static_transform_publisher" name="map4_broadcaster" args="0 0 6 0 0 0 1 map map_4 100" />
+
 	<node name="map_server_1" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_1.yaml">
 		<remap from="/map" to="/map_1"/>
 	</node>
 
-	<node name="map_server_2" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_2.yaml">
+	<!-- <node name="map_server_2" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_2.yaml">
+		<param name="frame_id" value="/map_2"/>
 		<remap from="/map" to="/map_2"/>
 	</node>
 
 	<node name="map_server_3" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_3.yaml">
+		<param name="frame_id" value="/map_3"/>
 		<remap from="/map" to="/map_3"/>
 	</node>
 
 	<node name="map_server_4" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_4.yaml">
+		<param name="frame_id" value="/map_4"/>
 		<remap from="/map" to="/map_4"/>
-	</node>
-
-<!-- 	<node name="map_server_5" type="map_server" pkg="map_server" args="$(find test_building)/maps/random_map_5.yaml">
-		<remap from="/map" to="/map_5"/>
 	</node> -->
 
 	<!-- Launch Rviz -->
