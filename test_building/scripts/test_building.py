@@ -3,7 +3,7 @@ import roslib
 import rospy
 
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, Path
 from sensor_msgs.msg import LaserScan
 import math
 from tf.transformations import euler_from_quaternion
@@ -27,7 +27,7 @@ class Robot:
 		self.goal   = self.start_pos
 
 		self.odom_sub  = rospy.Subscriber(self.topic + "/base_pose_ground_truth", Odometry, self.odom_callback)
-		self.twist_pub = rospy.Publisher(self.topic + "/cmd_vel", Twist)
+		self.twist_pub = rospy.Publisher(self.topic + "/cmd_vel", Twist, queue_size=10)
 
 	def __repr__(self):
 		return "%s(topic=%r, start_pos=%r)" % (
@@ -50,9 +50,12 @@ class Robot:
 		twist = Twist()
 
 		if abs(self.goal[0] - x) > 0.1 or abs(self.goal[1] - y) > 0.1:
-			coeff          = self.speed / ((self.goal[0] - x) ** 2 + (self.goal[1] - y) ** 2)
-			twist.linear.x = (self.goal[0] - x) * math.sqrt(coeff)
-			twist.linear.y = (self.goal[1] - y) * math.sqrt(coeff)
+			# coeff          = self.speed / ((self.goal[0] - x) ** 2 + (self.goal[1] - y) ** 2)
+			# twist.linear.x = (self.goal[0] - x) * math.sqrt(coeff)
+			# twist.linear.y = (self.goal[1] - y) * math.sqrt(coeff)
+			mag = math.sqrt((self.goal[0] - x) ** 2  + (self.goal[1] - y) ** 2)
+			twist.linear.x = self.speed * (self.goal[0] - x) / mag
+			twist.linear.y = self.speed * (self.goal[1] - y) / mag
 			active         = True
 
 		if abs(self.goal[2] - angle) > 3.0:
@@ -100,7 +103,7 @@ class Person(Robot):
 		self.too_close     = False;
 
 		self.odom_sub  = rospy.Subscriber(self.topic + "/base_pose_ground_truth", Odometry, self.odom_callback)
-		self.twist_pub = rospy.Publisher(self.topic + "/cmd_vel", Twist)
+		self.twist_pub = rospy.Publisher(self.topic + "/cmd_vel", Twist, queue_size=10)
 
 	def odom_callback(self, odom):
 		pos = odom.pose.pose.position
@@ -169,6 +172,84 @@ class Person(Robot):
 
 		self._next_waypoint()
 
+class MobileRobot(Robot):
+	def __init__(self, topic):
+		self.topic          = topic
+
+		self.setup()
+
+	def setup(self):
+		self.active        = False
+		self.too_close     = False
+
+		self.odom_sub  = rospy.Subscriber(self.topic + "/base_pose_ground_truth", Odometry, self.odom_callback)
+		self.path_sub  = rospy.Subscriber("/planner/path", Path, self.path_callback)
+		self.twist_pub = rospy.Publisher(self.topic + "/cmd_vel", Twist, queue_size=10)
+
+	def path_callback(self, path):
+		print "got path"
+
+		self.path = path.poses
+		self.next_waypoint = 0
+		self.end = len(path.poses)
+
+		pos = self.path[self.next_waypoint].pose.position
+		q     = self.path[self.next_waypoint].pose.orientation
+
+		rpy   = euler_from_quaternion([q.x, q.y, q.z, q.w])
+		angle = math.degrees(rpy[2])
+
+		self.goal = [pos.x - 13, pos.y, angle]
+
+		self.active = True
+
+		
+
+	def odom_callback(self, odom):
+		pos = odom.pose.pose.position
+
+		if self.active:
+			q     = odom.pose.pose.orientation
+			rpy   = euler_from_quaternion([q.x, q.y, q.z, q.w])
+			angle = math.degrees(rpy[2])
+			twist, active = self.twist_to_goal(pos.x, pos.y, angle)
+
+			print "publish twist"
+			self.twist_pub.publish(twist)
+
+			# if we haven't already reached the goal
+			if not active and self.next_waypoint != self.end:
+				print "cur waypoint", self.next_waypoint, self.end
+				self._next_waypoint()
+			
+			if not self.active and self.next_waypoint == self.end:
+				self.active = False
+				print "finished in", (rospy.Time.now() - self.start_time).to_sec()
+
+	def _next_waypoint(self):
+		if self.next_waypoint == 0:
+			self.start_time = rospy.Time.now()
+
+		self.next_waypoint += 1
+
+		if self.next_waypoint == self.end:
+			self.active = False
+
+		else:
+			pos = self.path[self.next_waypoint].pose.position
+			q     = self.path[self.next_waypoint].pose.orientation
+
+			rpy   = euler_from_quaternion([q.x, q.y, q.z, q.w])
+			angle = math.degrees(rpy[2])
+
+			goal = [pos.x - 13, pos.y, angle]
+			if self.next_waypoint != self.end - 1:
+				if math.sqrt((goal[0] - self.goal[0]) ** 2 + (goal[1] - self.goal[1]) ** 2) < 0.2:
+					self._next_waypoint()
+					return
+
+			self.goal = goal
+
 
 class EventHandler:
 	def __init__(self):
@@ -209,12 +290,96 @@ if __name__=="__main__":
 	for door in y['doors']:
 		door.setup()
 
-	for person in y['people']:
-		person.setup(y['doors'])
+	# for person in y['people']:
+	# 	person.setup(y['doors'])
 
 	e = EventHandler()
 
-	e.add_event(rospy.Duration(0),  lambda :y['people'][0].move_to_end())
+	# for i in range(len(y['doors'])):
+	# 	e.add_event(rospy.Duration(0), lambda :y['doors'][i].close_door())
+	# 	e.add_event(rospy.Duration(2), lambda :y['doors'][i].open_door())
+	# 	e.add_event(rospy.Duration(10), lambda :y['doors'][i].close_door())
+
+	e.add_event(rospy.Duration(0), lambda :y['doors'][0].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][1].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][2].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][3].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][4].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][5].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][6].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][7].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][8].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][9].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][10].open_door())
+	e.add_event(rospy.Duration(0), lambda :y['doors'][11].open_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][0].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][0].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][0].open_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][0].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][1].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][1].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][1].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][1].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][2].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][2].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][2].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][2].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][3].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][3].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][3].open_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][3].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][4].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][4].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][4].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][4].open_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][5].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][5].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][5].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][5].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][6].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][6].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][6].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][6].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][7].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][7].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][7].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][7].open_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][8].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][8].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][8].open_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][8].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][9].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][9].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][9].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][9].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][10].close_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][10].close_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][10].open_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][10].open_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][11].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][11].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][11].close_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][11].close_door())
+
+	# e.add_event(rospy.Duration(0), lambda :y['doors'][12].open_door())
+	# e.add_event(rospy.Duration(20), lambda :y['doors'][12].open_door())
+	# e.add_event(rospy.Duration(40), lambda :y['doors'][12].open_door())
+	# e.add_event(rospy.Duration(60), lambda :y['doors'][12].close_door())
+
+
+	# e.add_event(rospy.Duration(0),  lambda :y['people'][0].move_to_end())
 
 	# e.add_event(rospy.Duration(0),  lambda :y['doors'][10].open_door())
 	# e.add_event(rospy.Duration(2),  lambda :y['people'][1].move_to_end())
@@ -228,13 +393,14 @@ if __name__=="__main__":
 	# e.add_event(rospy.Duration(9),  lambda :y['people'][9].move_to_end())
 	# e.add_event(rospy.Duration(13), lambda :y['doors'][10].close_door())
 
+	m = MobileRobot("/robot_13")
+
+	# rospy.sleep(5)
+
 	e.run()
 
 
 	# y['doors'][8].open_door()
-
-	# while door.is_active() and not rospy.is_shutdown():
-	# 	pass
 
 	# for person in y['people']:
 	# 	person.loop_outandback()
