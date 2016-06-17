@@ -23,30 +23,42 @@
 #include <vector>
 #include <queue>
 #include <deque>
+#include <ctime>
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 
 class CompareNodesHeuristic {
 public:
 	CompareNodesHeuristic(Node new_goal) : goal(new_goal){}
-	// Diagonal distance
-	inline int heuristic(const Node& cur){
+	// Octile distance
+	inline int heuristic_octile(const Node& cur){
 		int dx = abs(cur.pt.x - goal.pt.x);
 		int dy = abs(cur.pt.y - goal.pt.y);
 
-	 // Manhattan distance with the distance saved using diagonals subtracted off
-		return (NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * std::min(dx, dy));
+		// Manhattan distance with the distance saved using diagonals subtracted off
+		return (NORM_STEP * (dx + dy) + (DIAG_STEP - 2 * NORM_STEP) * MIN(dx, dy));
 	}
 
 	// Manhattan Distance
-	// inline int heuristic(const Node& cur){
-	// 	int dx = abs(cur.pt.x - goal.pt.x);
-	// 	int dy = abs(cur.pt.y - goal.pt.y);
+	inline int heuristic_manhattan(const Node& cur){
+		int dx = abs(cur.pt.x - goal.pt.x);
+		int dy = abs(cur.pt.y - goal.pt.y);
 
-	// 	return 3 * (NORM_STEP * (dx + dy));
-	// }
+		return (NORM_STEP * (dx + dy));
+	}
+
+	// Euclidean Distance
+	inline int heuristic_euclidean(const Node& cur){
+		int dx = abs(cur.pt.x - goal.pt.x);
+		int dy = abs(cur.pt.y - goal.pt.y);
+
+		return NORM_STEP * std::sqrt(dx * dx + dy * dy);
+	}
 
 	bool const operator()(const Node &lhs, const Node &rhs) {
-		return (lhs.pt.t + 3 * heuristic(lhs) > rhs.pt.t + 3 * heuristic(rhs));
+		// return (lhs.pt.t + 3 * heuristic(lhs) > rhs.pt.t + 3 * heuristic(rhs));
+		return (lhs.pt.t + heuristic_octile(lhs) > rhs.pt.t + heuristic_octile(rhs));
 	}
 
 private:
