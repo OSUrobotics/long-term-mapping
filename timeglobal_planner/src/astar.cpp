@@ -102,7 +102,8 @@ namespace timeglobal_planner
 
 		Node cur;
 
-		double full_time = ros::Time::now().toSec();
+		// double full_time = ros::Time::now().toSec();
+		clock_t full_time = clock();
 
 		ROS_DEBUG("Planning...\n");
 
@@ -133,7 +134,9 @@ namespace timeglobal_planner
 					processed_points_pub_.publish(processed_points_);
 				}
 
-				ROS_DEBUG("Time Required: %lf\n", ros::Time::now().toSec() - full_time);
+				// ROS_DEBUG("Time Required: %lf\n", ros::Time::now().toSec() - full_time);
+				ROS_DEBUG("Time Required: %lf\n", ((float)(clock() - full_time))/CLOCKS_PER_SEC);
+				ROS_DEBUG("Expected path length: %lf\n", cur.pt.t * time_res_);
 				ROS_DEBUG("Retrieving path...");
 				return get_path(path, cur, finished);
 			}
@@ -184,19 +187,19 @@ namespace timeglobal_planner
 	// 2.097859 - (-4.985855, 2.975908)
 	// 1.317784 - (-4.016930, 3.020894)
 	// 3.556497 - ( 0.983357, 3.031751)
-	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
-		//add forward position at next time
-		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+	// inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+	// 	//add forward position at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
 
-		//add backward location at next time
-		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+	// 	//add backward location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
 
-		//add left location at next time
-		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+	// 	//add left location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
 
-		//add right location at next time
-		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
-	}
+	// 	//add right location at next time
+	// 	add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+	// }
 
 	// times:
 	// 3.098328 - (-4.986468, 2.981237)
@@ -258,81 +261,81 @@ namespace timeglobal_planner
 	// 1.436171 - (-4.018334, 3.044444)
 	// 8.449397 - ( 0.962736, 3.008032)
 
-	// inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
-	// 	//This implements a Jump Point Search neighbor selection. This ignores nodes that
-	// 	//can be traveled to more quickly through another node. The algorithm takes into
-	// 	//account where the parent node is to determine where the node is going. Using this
-	// 	//it culls the nodes that are unnecessary. When traveling in cardinal directions,
-	// 	//only consider the node directly in front. When traveling diagonally, only consider
-	// 	//the node in front and the nodes bordering it. Obstacles can create blocked nodes 
-	// 	//which must also be considered.
+	inline void AStar::add_neighbors(const timemap_server::TimeLapseMap &map, const std::vector< std::deque< std::deque< Node > > > &finished, std::vector<Node> &pqueue, Node cur){
+		//This implements a Jump Point Search neighbor selection. This ignores nodes that
+		//can be traveled to more quickly through another node. The algorithm takes into
+		//account where the parent node is to determine where the node is going. Using this
+		//it culls the nodes that are unnecessary. When traveling in cardinal directions,
+		//only consider the node directly in front. When traveling diagonally, only consider
+		//the node in front and the nodes bordering it. Obstacles can create blocked nodes 
+		//which must also be considered.
 
-	// 	//directions:
-	// 	//  q f e
-	// 	//  l u r
-	// 	//  z b c
+		//directions:
+		//  q f e
+		//  l u r
+		//  z b c
 
-	// 	//add current location at next time
-	// 	add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
+		//add current location at next time
+		add_neighbor(map, finished, pqueue, cur, 0, 0, TIME_STEP, 'u');	
 
-	// 	//add forward position at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'f' || cur.dir == 'q' || cur.dir == 'e'){
-	// 		add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
-	// 	}
+		//add forward position at next time
+		if(cur.dir == 'u' || cur.dir == 'f' || cur.dir == 'q' || cur.dir == 'e'){
+			add_neighbor(map, finished, pqueue, cur, 0, 1, NORM_STEP, 'f');
+		}
 
-	// 	//add backward location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'b' || cur.dir == 'z' || cur.dir == 'c'){
-	// 		add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
-	// 	}
+		//add backward location at next time
+		if(cur.dir == 'u' || cur.dir == 'b' || cur.dir == 'z' || cur.dir == 'c'){
+			add_neighbor(map, finished, pqueue, cur, 0, -1, NORM_STEP, 'b');
+		}
 
-	// 	//add left location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'l' || cur.dir == 'q' || cur.dir == 'z'){
-	// 		add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
-	// 	}
+		//add left location at next time
+		if(cur.dir == 'u' || cur.dir == 'l' || cur.dir == 'q' || cur.dir == 'z'){
+			add_neighbor(map, finished, pqueue, cur, -1, 0, NORM_STEP, 'l');
+		}
 
-	// 	//add right location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'r' || cur.dir == 'e' || cur.dir == 'c'){
-	// 		add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
-	// 	}
+		//add right location at next time
+		if(cur.dir == 'u' || cur.dir == 'r' || cur.dir == 'e' || cur.dir == 'c'){
+			add_neighbor(map, finished, pqueue, cur, 1, 0, NORM_STEP, 'r');
+		}
 
-	// 	//add forward left location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'q'
-	// 		//if certain neighbors are blocked, maybe include
-	// 		|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
-	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'l'){
+		//add forward left location at next time
+		if(cur.dir == 'u' || cur.dir == 'q'
+			//if certain neighbors are blocked, maybe include
+			|| cur.dir == 'f' && !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) 
+			|| cur.dir == 'l' && !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t))){
 
-	// 		add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
-	// 	}
+			add_neighbor(map, finished, pqueue, cur, -1, 1, DIAG_STEP, 'q');
+		}
 
-	// 	//add forward right location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'e'
-	// 		//if certain neighbors are blocked, maybe include
-	// 		|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'f'
-	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t)) && cur.dir == 'r'){
+		//add forward right location at next time
+		if(cur.dir == 'u' || cur.dir == 'e'
+			//if certain neighbors are blocked, maybe include
+			|| cur.dir == 'f' && !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t))
+			|| cur.dir == 'r' && !valid(get_occ(map, cur.pt.x, cur.pt.y + 1, cur.pt.t))){
 
-	// 		add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
-	// 	}
+			add_neighbor(map, finished, pqueue, cur, 1, 1, DIAG_STEP, 'e');
+		}
 
-	// 	//add back left location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'z'
-	// 		//if certain neighbors are blocked, maybe include
-	// 		|| !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
-	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'l'){
+		//add back left location at next time
+		if(cur.dir == 'u' || cur.dir == 'z'
+			//if certain neighbors are blocked, maybe include
+			|| cur.dir == 'b' && !valid(get_occ(map, cur.pt.x - 1, cur.pt.y, cur.pt.t))
+			|| cur.dir == 'l' && !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t))){
 
-	// 		add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
-	// 	}
+			add_neighbor(map, finished, pqueue, cur, -1, -1, DIAG_STEP, 'z');
+		}
 
-	// 	//add back right location at next time
-	// 	if(cur.dir == 'u' || cur.dir == 'c'
-	// 		//if certain neighbors are blocked, maybe include
-	// 		|| !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t)) && cur.dir == 'b'
-	// 		|| !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t)) && cur.dir == 'r'){
+		//add back right location at next time
+		if(cur.dir == 'u' || cur.dir == 'c'
+			//if certain neighbors are blocked, maybe include
+			|| cur.dir == 'b' && !valid(get_occ(map, cur.pt.x + 1, cur.pt.y, cur.pt.t))
+			|| cur.dir == 'r' && !valid(get_occ(map, cur.pt.x, cur.pt.y - 1, cur.pt.t))){
 
-	// 		add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
-	// 	}
-	// }
+			add_neighbor(map, finished, pqueue, cur, 1, -1, DIAG_STEP, 'c');
+		}
+	}
 
-		void AStar::inflate_map(timemap_server::TimeLapseMap &map){
+	void AStar::inflate_map(timemap_server::TimeLapseMap &map){
 		std::priority_queue<CellData> inflation_queue;
 
 		bool* seen = new bool[size_x_ * size_y_];
@@ -702,6 +705,8 @@ namespace timeglobal_planner
 		}
 
 		smooth_path(path);
+
+		std::reverse(path.poses.begin(), path.poses.end());
 
 		return !path.poses.empty();
 	}
