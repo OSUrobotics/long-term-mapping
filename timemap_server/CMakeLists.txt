@@ -31,8 +31,8 @@ catkin_package(
     INCLUDE_DIRS
         include
     LIBRARIES
-        image_loader
-        map_server_lib
+        timeimage_loader
+        timemap_server_lib
     CATKIN_DEPENDS
         roscpp
         tf
@@ -41,24 +41,24 @@ catkin_package(
 )
 
 include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
-add_library(image_loader src/image_loader.cpp)
-target_link_libraries(image_loader SDL SDL_image ${Boost_LIBRARIES})
+add_library(timeimage_loader src/image_loader.cpp)
+target_link_libraries(timeimage_loader SDL SDL_image ${Boost_LIBRARIES})
 
 include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
-add_library(map_server_lib src/map_server.cpp)
-target_link_libraries(map_server_lib ${catkin_LIBRARIES})
+add_library(timemap_server_lib src/map_server.cpp)
+target_link_libraries(timemap_server_lib ${catkin_LIBRARIES})
 
-add_executable(map_server src/main.cpp)
-target_link_libraries(map_server
-    map_server_lib
-    image_loader
+add_executable(timemap_server src/main.cpp)
+target_link_libraries(timemap_server
+    timemap_server_lib
+    timeimage_loader
     yaml-cpp
     ${catkin_LIBRARIES}
 )
 
-add_executable(map_server-map_saver src/map_saver.cpp)
-set_target_properties(map_server-map_saver PROPERTIES OUTPUT_NAME map_saver)
-target_link_libraries(map_server-map_saver
+add_executable(timemap_server-timemap_saver src/map_saver.cpp)
+set_target_properties(timemap_server-timemap_saver PROPERTIES OUTPUT_NAME timemap_saver)
+target_link_libraries(timemap_server-timemap_saver
     ${catkin_LIBRARIES}
     )
 
@@ -76,14 +76,14 @@ if(CATKIN_ENABLE_TESTING)
       test/testmap.bmp
       test/testmap.png )
   catkin_add_gtest(${PROJECT_NAME}_utest test/utest.cpp test/test_constants.cpp)
-  target_link_libraries(${PROJECT_NAME}_utest image_loader SDL SDL_image)
+  target_link_libraries(${PROJECT_NAME}_utest timeimage_loader SDL SDL_image)
 
-  add_executable(rtest test/rtest.cpp test/test_constants.cpp)
-  target_link_libraries( rtest
+  add_executable(timertest test/rtest.cpp test/test_constants.cpp)
+  target_link_libraries( timertest
       gtest
       ${catkin_LIBRARIES}
   )
-  add_dependencies(rtest nav_msgs_gencpp)
+  add_dependencies(timertest nav_msgs_gencpp)
 
   # This has to be done after we've already built targets, or catkin variables get borked
   find_package(rostest)
@@ -91,7 +91,7 @@ if(CATKIN_ENABLE_TESTING)
 endif()
 
 ## Install executables and/or libraries
-install(TARGETS map_server-map_saver map_server image_loader
+install(TARGETS timemap_server-timemap_saver timemap_server timeimage_loader
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
